@@ -1,0 +1,54 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "North Central US"
+    },
+    "vnetName": {
+      "value": "HubVNet"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.77.0.0/16"
+    },
+    "subnet0Name": {
+      "value": "PaloAltoManagement"
+    },
+    "subnet0Prefix": {
+      "value": "10.77.0.0/24"
+    },
+    "subnet1Name": {
+      "value": "PaloAltoUntrusted"
+    },
+    "subnet1Prefix": {
+      "value": "10.77.1.0/24"
+    },
+    "subnet2Name": {
+      "value": "PaloAltoTrusted"
+    },
+    "subnet2Prefix": {
+      "value": "10.77.2.0/24"
+    },   
+    "gatewaySubnetPrefix": {
+      "value": "10.77.4.0/24"
+    },  
+    "untrustedLoadBalancerSku": {
+      "value": "Standard"
+    },  
+    "trustedLoadBalancerSku": {
+      "value": "Standard"
+    },  
+    "vmSize":{
+      "value": "Standard_D3_v2"
+    },
+    "imageSku":{
+      "value": "byol"
+    },
+    "adminUsername":{
+      "value": "fwadmin"
+    },
+    "adminPassword":{
+      "value": "p@ssw0rd123A"
+    }
+  }
+}
