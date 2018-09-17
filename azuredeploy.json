@@ -310,6 +310,7 @@
         "[concat('Microsoft.Network/loadBalancers/', variables('untrustedLbName'))]"
       ],
       "properties": {
+	"enableIPForwarding": true,
         "ipConfigurations": [
           {
             "name": "ipconfig",
@@ -342,6 +343,7 @@
         "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"        
       ],
       "properties": {
+	"enableIPForwarding": true,
         "ipConfigurations": [
           {
             "name": "ipconfig1",
@@ -436,6 +438,7 @@
         "[concat('Microsoft.Network/loadBalancers/', variables('trustedLbName'))]"
       ],
       "properties": {
+	"enableIPForwarding": true,
         "ipConfigurations": [
           {
             "name": "ipconfig",
