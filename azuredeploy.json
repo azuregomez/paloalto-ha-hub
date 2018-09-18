@@ -216,6 +216,34 @@
       }
     },
     {
+      "comments": "Management NICs",
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('vmNamePrefix'), copyindex(1), '-',variables('managementNicNamePrefix'))]",      
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "e0NicLoop",
+        "count": "[variables('numberOfInstances')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"        
+      ],
+      "properties": {
+	"enableIPForwarding": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('managementSubnetRef')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "comments": "Public IP for Untrusted Azure Load Balancer FrontEnd",
       "apiVersion": "2017-08-01",
       "type": "Microsoft.Network/publicIPAddresses",
@@ -328,35 +356,7 @@
           }
         ]
       }
-    },
-    {
-      "comments": "Management NICs",
-      "apiVersion": "2015-05-01-preview",
-      "type": "Microsoft.Network/networkInterfaces",
-      "name": "[concat(variables('vmNamePrefix'), copyindex(1), '-',variables('managementNicNamePrefix'))]",      
-      "location": "[resourceGroup().location]",
-      "copy": {
-        "name": "e0NicLoop",
-        "count": "[variables('numberOfInstances')]"
-      },
-      "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"        
-      ],
-      "properties": {
-	"enableIPForwarding": true,
-        "ipConfigurations": [
-          {
-            "name": "ipconfig1",
-            "properties": {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('managementSubnetRef')]"
-              }
-            }
-          }
-        ]
-      }
-    },
+    },   
     { 
       "comments": "Trusted Load Balancer",
 			"apiVersion": "2017-08-01",
