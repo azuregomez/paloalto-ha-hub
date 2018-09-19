@@ -49,6 +49,9 @@
     },
     "adminPassword":{
       "value": "p@ssw0rd123A"
+    },
+    "dnsNameForPublicIP":{
+      "value": "egomez-pan-fw"
     }
   }
 }

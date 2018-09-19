@@ -133,14 +133,28 @@
 			"metadata": {
 				"description": "Password for the administrator account of VM-Series"
 			}
-		}
+    },
+    "dnsNameForPublicIP": {
+      "type": "string",
+      "defaultValue": "paloaltofirewallpublicip",
+      "metadata": {
+        "description": "Used for the Public IP of the Untrusted LB Front End and the Management IPs"
+      }
+    },
+    "fromGatewayLogin": {
+      "type": "string",
+      "defaultValue": "0.0.0.0/0",
+      "metadata": {
+        "description": "Valis source IP range for Management NSG"
+      }
+    }
   }, 
   "variables":
     {      
       "vmNamePrefix" : "PANVM",
+      "fwpublicIPName": "[concat(variables('vmNamePrefix'), '-fwMgmtPublicIP-')]",
       "fwlbPublicIPName" : "paloAltoExtLBIP",
-      "publicIPAddressType" : "Static",
-      "dnsNameForPublicIP" : "panshareduntrustedlbip",
+      "publicIPAddressType" : "Static",      
       "untrustedLbName" : "untrustedLoadBalancer",     
       "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('fwlbPublicIPName'))]",
       "untrustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('untrustedLbName'))]",
@@ -158,15 +172,71 @@
       "trustedSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnet2Name'))]",      
       "imagePublisher": "paloaltonetworks", 
       "imageOffer": "vmseries1",
-      "vmAvsetName":"PaloAltoAvailabilitySet"      
+      "vmAvsetName":"PaloAltoAvailabilitySet"      ,
+      "IPAddressPrefix" : "[substring(parameters('vnetAddressPrefix'), 0, 4)]"
     }
   ,
   "resources": [
+    {
+
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "PANDefaultNSG",
+      "location": "[parameters('location')]",
+      "properties": {
+          "securityRules": [{
+              "name": "Allow-Outside-From-IP",
+              "properties": {
+                  "description": "Rule",
+                  "protocol": "*",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "*",
+                  "sourceAddressPrefix": "[parameters('fromGatewayLogin')]",
+                  "destinationAddressPrefix": "*",
+                  "access": "Allow",
+                  "priority": 100,
+                  "direction": "Inbound"
+              }
+          },
+          {
+              "name": "Allow-Intra",
+              "properties": {
+                  "description": "Allow intra network traffic",
+                  "protocol": "*",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "*",
+                  "sourceAddressPrefix": "[concat(variables('IPAddressPrefix'), '.0.0/16')]",
+                  "destinationAddressPrefix": "*",
+                  "access": "Allow",
+                  "priority": 101,
+                  "direction": "Inbound"
+
+              }
+          },
+          {
+              "name": "Default-Deny",
+              "properties": {
+                  "description": "Default-Deny if we don't match Allow rule",
+                  "protocol": "*",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "*",
+                  "sourceAddressPrefix": "*",
+                  "destinationAddressPrefix": "*",
+                  "access": "Deny",
+                  "priority": 200,
+                  "direction": "Inbound"
+              }
+          }]
+      }
+    },
     {
       "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkSecurityGroups/', 'PANDefaultNSG')]"
+      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -177,13 +247,19 @@
           {
             "name": "[parameters('subnet0Name')]",
             "properties": {
-              "addressPrefix": "[parameters('subnet0Prefix')]"
+              "addressPrefix": "[parameters('subnet0Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'PANDefaultNSG')]"
+              }
             }
           },
           {
             "name": "[parameters('subnet1Name')]",
             "properties": {
-              "addressPrefix": "[parameters('subnet1Prefix')]"
+              "addressPrefix": "[parameters('subnet1Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'PANDefaultNSG')]"
+              }
             }
           },
           {
@@ -216,34 +292,6 @@
       }
     },
     {
-      "comments": "Management NICs",
-      "apiVersion": "2015-05-01-preview",
-      "type": "Microsoft.Network/networkInterfaces",
-      "name": "[concat(variables('vmNamePrefix'), copyindex(1), '-',variables('managementNicNamePrefix'))]",      
-      "location": "[resourceGroup().location]",
-      "copy": {
-        "name": "e0NicLoop",
-        "count": "[variables('numberOfInstances')]"
-      },
-      "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"        
-      ],
-      "properties": {
-	"enableIPForwarding": true,
-        "ipConfigurations": [
-          {
-            "name": "ipconfig1",
-            "properties": {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('managementSubnetRef')]"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
       "comments": "Public IP for Untrusted Azure Load Balancer FrontEnd",
       "apiVersion": "2017-08-01",
       "type": "Microsoft.Network/publicIPAddresses",
@@ -255,9 +303,61 @@
       "properties": {
           "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
           "dnsSettings": {
-              "domainNameLabel": "[variables('dnsNameForPublicIP')]"
+              "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
           }
 
+      }
+    },
+    {
+      "comments": "Public IPs for eth0 Management Interfaces",
+      "apiVersion": "2017-08-01",
+      "type": "Microsoft.Network/publicIPAddresses",      
+      "name": "[concat(variables('fwpublicIPName'), copyindex(1))]",    
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('untrustedLoadBalancerSku')]"
+      },
+      "copy": {
+        "name": "e0PublicIPLoop",
+        "count": "[variables('numberOfInstances')]"
+      },
+      "properties": {
+          "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+          "dnsSettings": {
+              "domainNameLabel": "[concat(parameters('dnsNameForPublicIP'), '-management-', copyindex(1))]"
+          }
+      }
+    },       
+    {
+      "comments": "Management NICs",
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('vmNamePrefix'), copyindex(1), '-',variables('managementNicNamePrefix'))]",      
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "e0NicLoop",
+        "count": "[variables('numberOfInstances')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('fwpublicIPName'), copyindex(1))]"        
+      ],
+      "properties": {
+	      "enableIPForwarding": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('fwpublicIPName'), copyindex(1)))]"
+              },
+              "subnet": {
+                "id": "[variables('managementSubnetRef')]"
+              }
+            }
+          }
+        ]
       }
     },
     {
@@ -512,13 +612,13 @@
 						{
 							"id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNamePrefix'), copyindex(1), '-',variables('managementNicNamePrefix')))]",
 							"properties": {
-								"primary": false
+								"primary": true
 							}
 						},
 						{              
 							"id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNamePrefix'), copyindex(1), '-',variables('untrustedNicNamePrefix')))]",
 							"properties": {
-								"primary": true
+								"primary": false
 							}
 						},
 						{
