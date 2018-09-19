@@ -512,13 +512,13 @@
 						{
 							"id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNamePrefix'), copyindex(1), '-',variables('managementNicNamePrefix')))]",
 							"properties": {
-								"primary": false
+								"primary": true
 							}
 						},
 						{              
 							"id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNamePrefix'), copyindex(1), '-',variables('untrustedNicNamePrefix')))]",
 							"properties": {
-								"primary": true
+								"primary": false
 							}
 						},
 						{
