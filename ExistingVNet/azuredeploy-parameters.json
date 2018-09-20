@@ -1,0 +1,46 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "North Central US"
+    },
+    "existingVNetResourceGroup":{
+      "value": "GOMEZHUB-RG"
+
+    },
+    "vnetName": {
+      "value": "GomezHub-Vnet"
+    },    
+    "mgmtSubnetName": {
+      "value": "pan-management-subnet"
+    },   
+    "trustedSubnetName": {
+      "value": "pan-trusted-subnet"
+    },    
+    "untrustedSubnetName": {
+      "value": "pan-untrusted-subnet"
+    },  
+    "untrustedLoadBalancerSku": {
+      "value": "Standard"
+    },  
+    "trustedLoadBalancerSku": {
+      "value": "Standard"
+    },  
+    "vmSize":{
+      "value": "Standard_D3_v2"
+    },
+    "imageSku":{
+      "value": "byol"
+    },
+    "adminUsername":{
+      "value": "fwadmin"
+    },
+    "adminPassword":{
+      "value": "p@ssw0rd123A"
+    },
+    "dnsNameForPublicIP":{
+      "value": "egomez-pan-fw"
+    }
+  }
+}
