@@ -12,4 +12,3 @@ https://www.paloaltonetworks.com/resources/whitepapers/intelligent-architectures
 The only change is:
 There is no eth3 interface in the PAN VMs. This is because Azure allows only 1 type of Load Balancer (Internal, External) on the same Availability Set.
 
-Ideally the management interfaces would get a private IP and then connected to Panorama from within the network.  However, Palo Alto does NOT support private IPs for the management interface.
