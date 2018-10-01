@@ -109,13 +109,6 @@
       "metadata": {
         "description": "Used for the Public IP of the Untrusted LB Front End and the Management IPs"
       }
-    },
-    "fromGatewayLogin": {
-      "type": "string",
-      "defaultValue": "0.0.0.0/0",
-      "metadata": {
-        "description": "Valis source IP range for Management NSG"
-      }
     }
   }, 
   "variables":
