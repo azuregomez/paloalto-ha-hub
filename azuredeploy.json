@@ -63,6 +63,20 @@
       "metadata": {
         "description": "Subnet 2 Name - Trusted"
       }
+    },  
+    "subnet3Prefix": {
+      "type": "string",
+      "defaultValue": "10.0.3.0/24",
+      "metadata": {
+        "description": "Subnet 2 Prefix"
+      }
+    },
+    "subnet3Name": {
+      "type": "string",
+      "defaultValue": "Backhaul",
+      "metadata": {
+        "description": "Subnet 3 Name - Backhaul"
+      }
     },   
     "gatewaySubnetPrefix": {
       "type": "string",
@@ -266,7 +280,13 @@
             "properties": {
               "addressPrefix": "[parameters('subnet2Prefix')]"
             }
-          },          
+          }, 
+          {
+            "name": "[parameters('subnet3Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet3Prefix')]"
+            }
+          },         
           {
             "name": "GatewaySubnet",
             "properties": {
@@ -401,7 +421,7 @@
               "protocol": "Tcp",
               "frontendPort": 80,
               "backendPort": 80,
-              "enableFloatingIP": false,
+              "enableFloatingIP": true,
               "idleTimeoutInMinutes": 5,
               "probe": {
                 "id": "[variables('untrustedlbProbeID')]"
@@ -414,7 +434,7 @@
             "name": "tcpProbe",
             "properties": {
               "protocol": "Tcp",
-              "port": 80,
+              "port": 443,
               "intervalInSeconds": 5,
               "numberOfProbes": 2
             }
@@ -503,7 +523,7 @@
 							"protocol": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 'All', 'Tcp')]",
 							"frontendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
 							"backendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
-							"enableFloatingIP": false,
+							"enableFloatingIP": true,
 							"idleTimeoutInMinutes": 4,
 							"loadDistribution": "SourceIPProtocol"
 						}						
@@ -513,7 +533,7 @@
 					{
 						"properties": {
 							"protocol": "Tcp",
-							"port": 22,
+							"port": 443,
 							"intervalInSeconds": 15,
 							"numberOfProbes": 2
 						},

@@ -29,6 +29,12 @@
     "subnet2Prefix": {
       "value": "10.77.2.0/24"
     },   
+    "subnet3Name": {
+      "value": "PaloAltoBackhaul"
+    },
+    "subnet3Prefix": {
+      "value": "10.77.3.0/24"
+    }, 
     "gatewaySubnetPrefix": {
       "value": "10.77.4.0/24"
     },  
