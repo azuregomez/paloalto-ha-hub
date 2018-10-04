@@ -21,6 +21,6 @@ East-west traffic, or traffic between private subnets, uses the same internal lo
 <b>Backhaul Traffic</b>
 User-defined routes applied to the gateway subnet direct traffic that has a destination in the private network range to the internal load-balancer with an additional frontend IP dedicated to incoming traffic from the backhaul connection. The load-balancer then distributes traffic to a new backend pool with dedicated interfaces on the firewalls. Dedicated firewall interfaces are used for the backhaul traffic because they allow for enhanced security policies that can take zone into account. 
 
-<b>Management</p>
+<b>Management</b>
 Traffic from the on-site networks communicates to the management subnet directly. This allows on-site administrators to manage the firewalls even when a misconfiguration occurs in user-defined routing or load-balancers.
 <i>For the purpose of making it easier for this template to be tested, the management interfaces have a public IP so they are accessible to the internet by adding an NSG to the management subnet that allow traffic.  However, if management should come only from within the network, the parameter validManagementSourceIPRange allows for a valid range. The public IP can also be removed. Panorama is out of the scope of this template.</i>

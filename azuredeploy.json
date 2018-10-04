@@ -584,7 +584,7 @@
 								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolTrusted')]"
 							},
 							"probe": {
-								"id": "[concat(variables('trustedLbID'), '/probes/lbprobetrusted')]"
+								"id": "[concat(variables('trustedLbID'), '/probes/lbprobe')]"
 							},
 							"protocol": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 'All', 'Tcp')]",
 							"frontendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
@@ -604,7 +604,7 @@
 								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolBackhaul')]"
 							},
 							"probe": {
-								"id": "[concat(variables('trustedLbID'), '/probes/lbprobebackhaul')]"
+								"id": "[concat(variables('trustedLbID'), '/probes/lbprobe')]"
 							},
 							"protocol": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 'All', 'Tcp')]",
 							"frontendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
