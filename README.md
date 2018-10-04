@@ -7,7 +7,9 @@ This deployment features:
 <li>Managed disks for the VMs
 </ul>
 
-This template follows the Shared Model.
+This template follows the Shared Model.  The deployment guide published by Palo Alto is also included. 
+
+<img src="https://storagegomez.blob.core.windows.net/public/images/pan-shared.jpg"/>
 
 <b>Inbound Traffic</b>
 For inbound traffic, a public load-balancer distributes traffic to the firewalls. To simplify firewall configuration, the frontend public IP address is associated with a DNS name and floating IP is enabled on the load-balancer rules. The public load-balancer’s health probes monitor firewall availability through the HTTPS service activated in the interface management profile. Connectivity to the HTTPS service is limited to traffic sourced from the health probe IP address.
@@ -22,5 +24,14 @@ East-west traffic, or traffic between private subnets, uses the same internal lo
 User-defined routes applied to the gateway subnet direct traffic that has a destination in the private network range to the internal load-balancer with an additional frontend IP dedicated to incoming traffic from the backhaul connection. The load-balancer then distributes traffic to a new backend pool with dedicated interfaces on the firewalls. Dedicated firewall interfaces are used for the backhaul traffic because they allow for enhanced security policies that can take zone into account. 
 
 <b>Management</b>
-Traffic from the on-site networks communicates to the management subnet directly. This allows on-site administrators to manage the firewalls even when a misconfiguration occurs in user-defined routing or load-balancers.
+Traffic from the on-site networks communicates to the management subnet directly. This allows on-site administrators to manage the firewalls even when a misconfiguration occurs in user-defined routing or load-balancers.<br/>
 <i>For the purpose of making it easier for this template to be tested, the management interfaces have a public IP so they are accessible to the internet by adding an NSG to the management subnet that allow traffic.  However, if management should come only from within the network, the parameter validManagementSourceIPRange allows for a valid range. The public IP can also be removed. Panorama is out of the scope of this template.</i>
+
+<hr/>
+
+<b>Notes</b>
+<ul>
+<li> On section 8.5 of the deployment guide, it reads: <i>...  Because the firewall’s public interface is a member of the Azure public load-balancer backend pool, Azure networking (Azure Load Balancer) performs translation (SNAT) for only TCP/UDP ports referenced in the active load balancing rules. To support a broad range of services, create a new public IP address for the public interface of each firewall used for outbound access. This method supports all TCP/UDP ports.
+</i><br/>However, with the Azure Load Balancer Standard SKU, configured with HA ports the ALB has a wildcard of ports and protocols as the load balancing rule so it would SNAT everything therefore the additional public IP would not be needed.
+</ul>
+

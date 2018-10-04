@@ -169,13 +169,13 @@
       "fwpublicIPName": "[concat(variables('vmNamePrefix'), '-fwMgmtPublicIP-')]",
       "fwlbPublicIPName" : "paloAltoExtLBIP",
       "publicIPAddressType" : "Static",      
-      "untrustedLbName" : "untrustedLoadBalancer",     
+      "untrustedLbName" : "AzureRefArch-Shared-Public",     
       "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('fwlbPublicIPName'))]",
       "untrustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('untrustedLbName'))]",
       "frontEndIPConfigID": "[concat(variables('untrustedLbID'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]",
-      "untrustedlbPoolID": "[concat(variables('untrustedLbID'),'/backendAddressPools/BackendPool')]",
+      "untrustedlbPoolID": "[concat(variables('untrustedLbID'),'/backendAddressPools/Firewall-Layer')]",
       "untrustedlbProbeID": "[concat(variables('untrustedLbID'),'/probes/tcpProbe')]",
-      "trustedLbName" : "trustedLoadBalancer",
+      "trustedLbName" : "AzureRefArch-Shared-Internal",
       "trustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('trustedLbName'))]",     
       "numberOfInstances": 2,
       "managementNicNamePrefix" : "eth0",
@@ -459,12 +459,12 @@
         ],
         "backendAddressPools": [
           {
-            "name": "BackendPool"
+            "name": "Firewall-Layer"
           }
         ],       
         "loadBalancingRules": [
           {
-            "name": "LBRule",
+            "name": "lbrule",
             "properties": {
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
@@ -522,7 +522,7 @@
               },
               "loadBalancerBackendAddressPools": [
                 {
-                  "id": "[concat(variables('untrustedLbID'), '/backendAddressPools/BackendPool')]"
+                  "id": "[concat(variables('untrustedLbID'), '/backendAddressPools/Firewall-Layer')]"
                 }
               ]
             }
@@ -567,10 +567,10 @@
 				],
 				"backendAddressPools": [
 					{
-						"name": "BackendPoolTrusted"
+						"name": "Firewall-Layer-Private"
           },
           {
-						"name": "BackendPoolBackhaul"
+						"name": "Firewall-Layer-VPN"
           }
 				],
 				"loadBalancingRules": [
@@ -581,7 +581,7 @@
 								"id": "[concat(variables('trustedLbID'), '/frontendIpConfigurations/FrontendTrusted')]"
 							},
 							"backendAddressPool": {
-								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolTrusted')]"
+								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/Firewall-Layer-Private')]"
 							},
 							"probe": {
 								"id": "[concat(variables('trustedLbID'), '/probes/lbprobe')]"
@@ -601,7 +601,7 @@
 								"id": "[concat(variables('trustedLbID'), '/frontendIpConfigurations/FrontendBackhaul')]"
 							},
 							"backendAddressPool": {
-								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolBackhaul')]"
+								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/Firewall-Layer-VPN')]"
 							},
 							"probe": {
 								"id": "[concat(variables('trustedLbID'), '/probes/lbprobe')]"
@@ -654,7 +654,7 @@
               },
               "loadBalancerBackendAddressPools": [
                 {
-                  "id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolTrusted')]"
+                  "id": "[concat(variables('trustedLbID'), '/backendAddressPools/Firewall-Layer-Private')]"
                 }
               ]
             }
@@ -688,7 +688,7 @@
               },
               "loadBalancerBackendAddressPools": [
                 {
-                  "id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolBackhaul')]"
+                  "id": "[concat(variables('trustedLbID'), '/backendAddressPools/Firewall-Layer-VPN')]"
                 }
               ]
             }
