@@ -22,60 +22,60 @@
         "description": "Address prefix"
       }
     },
-    "subnet0Prefix": {
+    "managementSubnetPrefix": {
       "type": "string",
       "defaultValue": "10.0.0.0/24",
       "metadata": {
-        "description": "Subnet 0 Prefix"
+        "description": "PaloAlto Management Subnet Prefix"
       }
     },
-    "subnet0Name": {
+    "managementSubnetName": {
       "type": "string",
-      "defaultValue": "PaloAltoManagement",
+      "defaultValue": "PaloAlto-Management",
       "metadata": {
-        "description": "Subnet 0 Management eth0"
+        "description": "PaloAlto Management Subnet for eth0"
       }
     },
-    "subnet1Prefix": {
+    "untrustedSubnetPrefix": {
       "type": "string",
       "defaultValue": "10.0.1.0/24",
       "metadata": {
-        "description": "Subnet 1 Prefix"
+        "description": "Palo Alto Untrusted Subnet Prefix"
       }
     },
-    "subnet1Name": {
+    "untrustedSubnetName": {
       "type": "string",
-      "defaultValue": "Untrusted",
+      "defaultValue": "PaloAlto-Untrusted",
       "metadata": {
-        "description": "Subnet 1 Name - Untrusted"
+        "description": "Palo Alto Untrusted Subnet for eth1"
       }
     },
-    "subnet2Prefix": {
+    "trustedSubnetPrefix": {
       "type": "string",
       "defaultValue": "10.0.2.0/24",
       "metadata": {
-        "description": "Subnet 2 Prefix"
+        "description": "Palo Alto Trusted Subnet"
       }
     },
-    "subnet2Name": {
+    "trustedSubnetName": {
       "type": "string",
       "defaultValue": "Trusted",
       "metadata": {
-        "description": "Subnet 2 Name - Trusted"
+        "description": "Palo Alto Untrusted Subnet for eth2"
       }
     },  
-    "subnet3Prefix": {
+    "backhaulSubnetPrefix": {
       "type": "string",
       "defaultValue": "10.0.3.0/24",
       "metadata": {
-        "description": "Subnet 2 Prefix"
+        "description": "Backhaul subnet"
       }
     },
-    "subnet3Name": {
+    "backhaulSubnetName": {
       "type": "string",
       "defaultValue": "Backhaul",
       "metadata": {
-        "description": "Subnet 3 Name - Backhaul"
+        "description": "Backhaul Subnet for eth3"
       }
     },   
     "gatewaySubnetPrefix": {
@@ -155,17 +155,17 @@
         "description": "Used for the Public IP of the Untrusted LB Front End and the Management IPs"
       }
     },
-    "fromGatewayLogin": {
+    "validManagementSourceIPRange": {
       "type": "string",
       "defaultValue": "0.0.0.0/0",
       "metadata": {
-        "description": "Valis source IP range for Management NSG"
+        "description": "Valid source IP range for Management NSG"
       }
     }
   }, 
   "variables":
     {      
-      "vmNamePrefix" : "PANVM",
+      "vmNamePrefix" : "PaloAltoVM",
       "fwpublicIPName": "[concat(variables('vmNamePrefix'), '-fwMgmtPublicIP-')]",
       "fwlbPublicIPName" : "paloAltoExtLBIP",
       "publicIPAddressType" : "Static",      
@@ -178,12 +178,14 @@
       "trustedLbName" : "trustedLoadBalancer",
       "trustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('trustedLbName'))]",     
       "numberOfInstances": 2,
-      "untrustedNicNamePrefix" : "eth1",
-      "untrustedSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnet1Name'))]",
       "managementNicNamePrefix" : "eth0",
-      "managementSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnet0Name'))]",
+      "managementSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('managementSubnetName'))]",
+      "untrustedNicNamePrefix" : "eth1",
+      "untrustedSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('untrustedSubnetName'))]",
       "trustedNicNamePrefix" : "eth2",
-      "trustedSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnet2Name'))]",      
+      "trustedSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('trustedSubnetName'))]",      
+      "backhaulNicNamePrefix" : "eth3",
+      "backhaulSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('backhaulSubnetName'))]",      
       "imagePublisher": "paloaltonetworks", 
       "imageOffer": "vmseries1",
       "vmAvsetName":"PaloAltoAvailabilitySet"      ,
@@ -194,7 +196,7 @@
     {
       "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/networkSecurityGroups",
-      "name": "PANDefaultNSG",
+      "name": "AllowAll-Subnet",
       "location": "[parameters('location')]",
       "properties": {
           "securityRules": [{
@@ -204,7 +206,7 @@
                   "protocol": "*",
                   "sourcePortRange": "*",
                   "destinationPortRange": "*",
-                  "sourceAddressPrefix": "[parameters('fromGatewayLogin')]",
+                  "sourceAddressPrefix": "[parameters('validManagementSourceIPRange')]",
                   "destinationAddressPrefix": "*",
                   "access": "Allow",
                   "priority": 100,
@@ -244,11 +246,63 @@
     },
     {
       "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "AllowManagement-Subnet",
+      "location": "[parameters('location')]",
+      "properties": {
+          "securityRules": [
+          {
+              "name": "AllowHTTPS-Inbound",
+              "properties": {
+                  "description": "Rule",
+                  "protocol": "Tcp",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "443",
+                  "sourceAddressPrefix": "[parameters('validManagementSourceIPRange')]",
+                  "destinationAddressPrefix": "*",
+                  "access": "Allow",
+                  "priority": 100,
+                  "direction": "Inbound"
+              }
+          },
+          {
+            "name": "AllowSSH-Inbound",
+            "properties": {
+                "description": "Rule",
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "22",
+                "sourceAddressPrefix": "[parameters('validManagementSourceIPRange')]",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 110,
+                "direction": "Inbound"
+            }
+          },
+          {
+              "name": "Default-Deny",
+              "properties": {
+                  "description": "Default-Deny if we don't match Allow rule",
+                  "protocol": "*",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "*",
+                  "sourceAddressPrefix": "*",
+                  "destinationAddressPrefix": "*",
+                  "access": "Deny",
+                  "priority": 200,
+                  "direction": "Inbound"
+              }
+          }]
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkSecurityGroups/', 'PANDefaultNSG')]"
+        "[concat('Microsoft.Network/networkSecurityGroups/', 'AllowAll-Subnet')]",
+        "[concat('Microsoft.Network/networkSecurityGroups/', 'AllowManagement-Subnet')]"
       ],
       "properties": {
         "addressSpace": {
@@ -258,33 +312,33 @@
         },
         "subnets": [
           {
-            "name": "[parameters('subnet0Name')]",
+            "name": "[parameters('managementSubnetName')]",
             "properties": {
-              "addressPrefix": "[parameters('subnet0Prefix')]",
+              "addressPrefix": "[parameters('managementSubnetPrefix')]",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'PANDefaultNSG')]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'AllowManagement-Subnet')]"
               }
             }
           },
           {
-            "name": "[parameters('subnet1Name')]",
+            "name": "[parameters('untrustedSubnetName')]",
             "properties": {
-              "addressPrefix": "[parameters('subnet1Prefix')]",
+              "addressPrefix": "[parameters('untrustedSubnetPrefix')]",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'PANDefaultNSG')]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'AllowAll-Subnet')]"
               }
             }
           },
           {
-            "name": "[parameters('subnet2Name')]",
+            "name": "[parameters('trustedSubnetName')]",
             "properties": {
-              "addressPrefix": "[parameters('subnet2Prefix')]"
+              "addressPrefix": "[parameters('trustedSubnetPrefix')]"
             }
           }, 
           {
-            "name": "[parameters('subnet3Name')]",
+            "name": "[parameters('backhaulSubnetName')]",
             "properties": {
-              "addressPrefix": "[parameters('subnet3Prefix')]"
+              "addressPrefix": "[parameters('backhaulSubnetPrefix')]"
             }
           },         
           {
@@ -499,13 +553,25 @@
               },
               "privateIPAllocationMethod": "Dynamic"
 						}
+          },
+          {
+						"name": "FrontendBackhaul",
+						"properties": {
+							"subnet": {
+                "id": "[variables('trustedSubnetRef')]"                
+              },
+              "privateIPAllocationMethod": "Dynamic"
+						}
 					}
 
 				],
 				"backendAddressPools": [
 					{
 						"name": "BackendPoolTrusted"
-					}
+          },
+          {
+						"name": "BackendPoolBackhaul"
+          }
 				],
 				"loadBalancingRules": [
 					{
@@ -518,7 +584,27 @@
 								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolTrusted')]"
 							},
 							"probe": {
-								"id": "[concat(variables('trustedLbID'), '/probes/lbprobe')]"
+								"id": "[concat(variables('trustedLbID'), '/probes/lbprobetrusted')]"
+							},
+							"protocol": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 'All', 'Tcp')]",
+							"frontendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
+							"backendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
+							"enableFloatingIP": true,
+							"idleTimeoutInMinutes": 4,
+							"loadDistribution": "SourceIPProtocol"
+						}						
+          },
+          {
+            "name": "lbrulebackhaul",
+						"properties": {
+							"frontendIPConfiguration": {
+								"id": "[concat(variables('trustedLbID'), '/frontendIpConfigurations/FrontendBackhaul')]"
+							},
+							"backendAddressPool": {
+								"id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolBackhaul')]"
+							},
+							"probe": {
+								"id": "[concat(variables('trustedLbID'), '/probes/lbprobebackhaul')]"
 							},
 							"protocol": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 'All', 'Tcp')]",
 							"frontendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
@@ -575,7 +661,41 @@
           }
         ]
       }
-    },  
+    }, 
+    {
+      "comments": "Backhaul NICs",
+      "apiVersion": "2015-05-01-preview",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('vmNamePrefix'), copyindex(1), '-',variables('backhaulNicNamePrefix'))]",            
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "e3NicLoop",
+        "count": "[variables('numberOfInstances')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
+        "[concat('Microsoft.Network/loadBalancers/', variables('trustedLbName'))]"
+      ],
+      "properties": {
+	"enableIPForwarding": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('backhaulSubnetRef')]"
+              },
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[concat(variables('trustedLbID'), '/backendAddressPools/BackendPoolBackhaul')]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }, 
     {
       "comments" : "PaloAlto VM Series",
       "type": "Microsoft.Compute/virtualMachines",
@@ -589,7 +709,8 @@
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', variables('vmNamePrefix'), copyindex(1), '-',variables('untrustedNicNamePrefix'))]",
         "[concat('Microsoft.Network/networkInterfaces/', variables('vmNamePrefix'), copyindex(1), '-',variables('managementNicNamePrefix'))]",
-        "[concat('Microsoft.Network/networkInterfaces/', variables('vmNamePrefix'), copyindex(1), '-',variables('trustedNicNamePrefix'))]",        
+        "[concat('Microsoft.Network/networkInterfaces/', variables('vmNamePrefix'), copyindex(1), '-',variables('trustedNicNamePrefix'))]",     
+        "[concat('Microsoft.Network/networkInterfaces/', variables('vmNamePrefix'), copyindex(1), '-',variables('backhaulNicNamePrefix'))]",        
         "[concat('Microsoft.Compute/availabilitySets/', variables('vmAvsetName'))]"        
       ],
 			"plan": {
@@ -642,6 +763,13 @@
 						},
 						{
 							"id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNamePrefix'), copyindex(1), '-',variables('trustedNicNamePrefix')))]",
+							"properties": {
+								"primary": false
+							}
+            }
+            ,
+						{
+							"id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNamePrefix'), copyindex(1), '-',variables('backhaulNicNamePrefix')))]",
 							"properties": {
 								"primary": false
 							}
