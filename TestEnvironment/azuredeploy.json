@@ -64,7 +64,7 @@
     "variables": {      
       "nicName": "[concat(parameters('bastionVmName'), '-NIC')]",      
       "publicIPAddressName": "[concat(parameters('bastionVmName'), '-PIP')]",         
-      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/', parameters('vnetName'), parameters('bastionSubnetName'))]"      
+      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('bastionSubnetName'))]"                
     },
     "resources": [     
       {
