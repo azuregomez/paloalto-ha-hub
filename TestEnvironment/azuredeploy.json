@@ -7,59 +7,89 @@
             "metadata": {
             "description": "Name for the existing VNet."
             }
-      },
-      "bastionVmName": {
-        "type": "string",
-        "metadata": {
-          "description": "Name for the bastionVirtual Machine."
+        },
+        "bastionVmName": {
+            "type": "string",
+            "metadata": {
+            "description": "Name for the bastionVirtual Machine."
+            }
+        },
+        "bastionSubnetName": {
+            "type": "string",
+            "metadata": {
+            "description": "Name for the bastion subnet."
+            }
+        },
+        "bastionSubnetPrefix": {
+            "type": "string",
+            "metadata": {
+            "description": "Prefix for the bastion subnet."
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Username for the Virtual Machine."
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+            "description": "Password for the Virtual Machine."
+            }
+        },     
+        "windowsOSVersion": {
+            "type": "string",
+            "defaultValue": "2016-Datacenter",
+            "allowedValues": [
+            "2008-R2-SP1",
+            "2012-Datacenter",
+            "2012-R2-Datacenter",
+            "2016-Nano-Server",
+            "2016-Datacenter-with-Containers",
+            "2016-Datacenter"
+            ],
+            "metadata": {
+            "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+            "description": "Location for all resources."
+            }
+        },
+        "spokeVnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Spoke VNet Name."
+            }
+        },
+        "spokeVNetPrefix":{
+            "type": "string",
+            "metadata": {
+                "description": "Spoke VNet Address Space"
+            }
+        },
+        "spokeSubnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Spoke Subnet Name"
+            }
+        },
+        "spokeSubnetPrefix":{
+            "type": "string",
+            "metadata": {
+                "description": "Spoke Subnet Address Space"
+            }
+        },
+        "spokeVmName":{
+            "type": "string",
+            "metadata": {
+                "description": "Spoke (Website) VNet Name"
+            }
         }
-      },
-      "bastionSubnetName": {
-        "type": "string",
-        "metadata": {
-          "description": "Name for the bastion subnet."
-        }
-      },
-      "bastionSubnetPrefix": {
-        "type": "string",
-        "metadata": {
-          "description": "Prefix for the bastion subnet."
-        }
-      },
-      "adminUsername": {
-        "type": "string",
-        "metadata": {
-          "description": "Username for the Virtual Machine."
-        }
-      },
-      "adminPassword": {
-        "type": "securestring",
-        "metadata": {
-          "description": "Password for the Virtual Machine."
-        }
-      },     
-      "windowsOSVersion": {
-        "type": "string",
-        "defaultValue": "2016-Datacenter",
-        "allowedValues": [
-          "2008-R2-SP1",
-          "2012-Datacenter",
-          "2012-R2-Datacenter",
-          "2016-Nano-Server",
-          "2016-Datacenter-with-Containers",
-          "2016-Datacenter"
-        ],
-        "metadata": {
-          "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version."
-        }
-      },
-      "location": {
-        "type": "string",
-        "defaultValue": "[resourceGroup().location]",
-        "metadata": {
-          "description": "Location for all resources."
-        }
-      }
     },
     "variables": {      
       "nicName": "[concat(parameters('bastionVmName'), '-NIC')]",      
@@ -113,6 +143,44 @@
                 }
             }]
         }
+      },      
+      {
+        "comments": "NSG for Web",
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "AllowWeb-Subnet",
+        "location": "[parameters('location')]",
+        "properties": {
+            "securityRules": [
+            {
+                "name": "AllowWeb-Inbound",
+                "properties": {
+                    "description": "Rule",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "80",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            },          
+            {
+                "name": "Default-Deny",
+                "properties": {
+                    "description": "Default-Deny if we don't match Allow rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Deny",
+                    "priority": 200,
+                    "direction": "Inbound"
+                }
+            }]
+        }
       },
       {
         "comments": "New Bastion Subnet",
@@ -121,7 +189,10 @@
         "name": "[concat(parameters('vnetName'), '/', parameters('bastionSubnetName'))]",
         "location": "[parameters('location')]",
         "properties": {
-          "addressPrefix": "[parameters('bastionSubnetPrefix')]"
+          "addressPrefix": "[parameters('bastionSubnetPrefix')]",
+          "networkSecurityGroup": {
+            "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'AllowRDP-Subnet')]"
+          }
         }
       },
       {
@@ -132,7 +203,7 @@
         "location": "[parameters('location')]",
         "dependsOn": [
           "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
-          "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'),parameters('bastionSubnetName'))]"
+          "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('vnetName'), parameters('bastionSubnetName'))]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -197,14 +268,10 @@
         }
       }
     ],
-    "outputs": {
-      "hostname": {
+    "outputs": {     
+      "bastionvmip": {
         "type": "string",
-        "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]"
-      },
-      "IP": {
-        "type": "string",
-        "value": "[reference(variables('publicIPAddressName')).IpAddress]"
+        "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))).IpAddress]"        
       }
     }
   }
