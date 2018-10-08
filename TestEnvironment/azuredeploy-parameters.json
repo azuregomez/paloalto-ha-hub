@@ -19,6 +19,21 @@
       },
       "bastionSubnetPrefix": {
         "value": "10.10.4.0/24"
+      },
+      "spokeVnetName": {
+          "value": "SpokeVNet"
+      },
+      "spokeVNetPrefix":{
+          "value": "10.11.0.0/16"
+      },
+      "spokeSubnetName": {
+        "value": "SpokeVNet"
+      },
+      "spokeSubnetPrefix":{
+            "value": "10.11.1.0/24"
+      },
+      "spokeVmName":{
+          "value": "webVm01"
       }
     }
   }

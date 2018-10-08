@@ -89,23 +89,114 @@
             "metadata": {
                 "description": "Spoke (Website) VNet Name"
             }
-        }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The base URI where artifacts required by this template are located."
+            },
+            "defaultValue": "https://storagegomez.blob.core.windows.net/arm" 
+        },
+        "_artifactsDirectory": {
+            "type": "string",
+            "metadata": {
+                "description": "The directory path on the blob storage container (the path part of the blob name really)."
+            },
+            "defaultValue": "webvm"
+        },
+        "gatewaySku": {
+            "type": "string",
+            "defaultValue": "Basic",
+            "allowedValues": [
+              "Basic",
+              "Standard",
+              "HighPerformance"
+            ],
+            "metadata": {
+              "description": "The Sku of the Gateway. This must be one of Basic, Standard or HighPerformance."
+            }
+          },
+          "vpnType": {
+            "type": "string",
+            "metadata": {
+              "description": "Route based (Dynamic Gateway) or Policy based (Static Gateway)"
+            },
+            "defaultValue": "RouteBased",
+            "allowedValues": [
+              "RouteBased",
+              "PolicyBased"
+            ]
+          }
     },
     "variables": {      
       "nicName": "[concat(parameters('bastionVmName'), '-NIC')]",      
+      "spokeNicName": "[concat(parameters('spokeVmName'), '-NIC')]",      
       "publicIPAddressName": "[concat(parameters('bastionVmName'), '-PIP')]",         
-      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('bastionSubnetName'))]"            
+      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('bastionSubnetName'))]",
+      "spokeSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('spokeVnetName'), parameters('spokeSubnetName'))]",
+      "scriptFileName": "WebScript.ps1",
+      "fileToBeCopied": "index.html",
+      "scriptParameters": "[concat('-artifactsLocation ', parameters('_artifactsLocation'), '/', parameters('_artifactsDirectory'),  ' -fileToInstall ', variables('fileToBeCopied'))]",
+      "gatewaySubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'GatewaySubnet')]",    
+      "gatewayPublicIpName" : "[concat(parameters('vnetName'), '-Gwy-IP')]",
+      "gatewayName": "[concat(parameters('vnetName'), '-Gwy')]",
+      "spokeVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('spokeVnetName'))]",      
+      "hubPeeringName": "[concat(parameters('vnetName'), '/peering-to-spoke')]",     
+      "hubVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",      
+      "spokePeeringName": "[concat(parameters('spokeVnetName'), '/peering-to-hub')]"
     },
     "resources": [     
-      {
-        "apiVersion": "2016-03-30",
-        "type": "Microsoft.Network/publicIPAddresses",
-        "name": "[variables('publicIPAddressName')]",
-        "location": "[parameters('location')]",
-        "properties": {
-          "publicIPAllocationMethod": "Dynamic"          
-        }
-      },
+        {
+            "apiVersion": "2018-07-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('gatewayPublicIpName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+              "publicIPAllocationMethod": "Dynamic"
+            }
+        },
+        {
+            "apiVersion": "2018-07-01",
+            "type": "Microsoft.Network/virtualNetworkGateways",
+            "name": "[variables('gatewayName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+              "[concat('Microsoft.Network/publicIPAddresses/', variables('gatewayPublicIPName'))]"
+            ],
+            "properties": {
+              "ipConfigurations": [
+                {
+                  "properties": {
+                    "privateIPAllocationMethod": "Dynamic",
+                    "subnet": {
+                      "id": "[variables('gatewaySubnetRef')]"
+                    },
+                    "publicIPAddress": {
+                      "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('gatewayPublicIPName'))]"
+                    }
+                  },
+                  "name": "vnetGatewayConfig"
+                }
+              ],
+              "sku": {
+                "name": "[parameters('gatewaySku')]",
+                "tier": "[parameters('gatewaySku')]"
+              },
+              "gatewayType": "Vpn",
+              "vpnType": "[parameters('vpnType')]",
+              "enableBgp": "false"
+            }
+          },
+        {
+            "comments": "Bastion VNet Public IP",
+            "apiVersion": "2016-03-30",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+            "publicIPAllocationMethod": "Dynamic"          
+            }
+        },
       {
         "comments": "NSG for RDP",
         "apiVersion": "2015-06-15",
@@ -196,6 +287,56 @@
         }
       },
       {
+        "comments": "Spoke VNet",
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "[parameters('spokeVnetName')]",
+        "location": "[parameters('location')]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/networkSecurityGroups/', 'AllowWeb-Subnet')]",
+          "[concat('Microsoft.Network/virtualNetworkGateways/', variables('gatewayName'))]"
+        ],
+        "properties": {
+          "addressSpace": {
+            "addressPrefixes": [
+              "[parameters('spokeVnetPrefix')]"
+            ]
+          },
+          "subnets": [
+            {
+              "name": "[parameters('spokeSubnetName')]",
+              "properties": {
+                "addressPrefix": "[parameters('spokeSubnetPrefix')]",
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'AllowWeb-Subnet')]"
+                }
+              }
+            }
+          ]
+        },
+        "resources" :[
+            {
+                "comments": "Spoke to Hub Peering",
+                "apiVersion": "2016-06-01",
+                "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                "name": "[variables('spokePeeringName')]",
+                "location": "[parameters('location')]",  
+                "dependsOn": [
+                    "[concat('Microsoft.Network/virtualNetworks/', parameters('spokeVNetName'))]"            
+                ],             
+                "properties": {
+                  "allowVirtualNetworkAccess": true,
+                  "allowForwardedTraffic": true,
+                  "allowGatewayTransit": false,
+                  "useRemoteGateways": true,
+                  "remoteVirtualNetwork": {
+                    "id": "[variables('hubVNetRef')]"
+                  }
+                }
+              }
+        ]
+      },  
+      {
         "comments": "NIC for bastionVM",
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/networkInterfaces",
@@ -264,6 +405,119 @@
                 "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
               }
             ]
+          }
+        }
+      },
+      {
+        "comments": "NIC for spokeVM",
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[variables('spokeNicName')]",
+        "location": "[parameters('location')]",
+        "dependsOn": [          
+          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('spokeVnetName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "privateIPAllocationMethod": "Dynamic",                
+                "subnet": {
+                  "id": "[variables('spokeSubnetRef')]"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "comments": "Spoke Web VM",
+        "apiVersion": "2017-03-30",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "[parameters('spokeVmName')]",
+        "location": "[parameters('location')]",
+        "dependsOn": [          
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('spokeNicName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "Standard_A2"
+          },
+          "osProfile": {
+            "computerName": "[parameters('spokeVmName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]"
+          },
+          "storageProfile": {
+            "imageReference": {
+              "publisher": "MicrosoftWindowsServer",
+              "offer": "WindowsServer",
+              "sku": "[parameters('windowsOSVersion')]",
+              "version": "latest"
+            },
+            "osDisk": {
+              "createOption": "FromImage"
+            },
+            "dataDisks": [
+              {
+                "diskSizeGB": 1023,
+                "lun": 0,
+                "createOption": "Empty"
+              }
+            ]
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('spokeNicName'))]"
+              }
+            ]
+          }
+        },
+        "resources": [
+            {
+                "type": "extensions",
+                "name": "CustomScriptExtension",
+                "apiVersion": "2017-03-30",
+                "location": "[resourceGroup().location]",
+                "dependsOn": [
+                    "[parameters('spokeVmName')]"
+                ],
+                "properties": {
+                    "publisher": "Microsoft.Compute",
+                    "type": "CustomScriptExtension",
+                    "typeHandlerVersion": "1.9",
+                    "autoUpgradeMinorVersion": true,
+                    "settings": {
+                        "fileUris": [
+                            "[concat(parameters('_artifactsLocation'), '/', parameters('_artifactsDirectory'), '/', variables('ScriptFileName'))]"                                
+                        ],
+                        "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', './' , parameters('_artifactsDirectory'), '/',  variables('scriptFileName'), ' ', variables('scriptParameters'))]"                            
+                    },
+                    "provisioningState": "Succeeded"
+                    
+                }
+            }
+        ]
+      },
+      {
+        "comments": "Hub to Spoke Peering",
+        "apiVersion": "2016-06-01",
+        "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+        "name": "[variables('hubPeeringName')]",
+        "location": "[parameters('location')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('spokeVNetName'))]",
+            "[concat('Microsoft.Network/virtualNetworkGateways/', variables('gatewayName'))]"        
+        ],
+        "properties": {
+          "allowVirtualNetworkAccess": true,
+          "allowForwardedTraffic": true,
+          "allowGatewayTransit": true,
+          "useRemoteGateways": false,
+          "remoteVirtualNetwork": {
+            "id": "[variables('spokeVNetRef')]"
           }
         }
       }
