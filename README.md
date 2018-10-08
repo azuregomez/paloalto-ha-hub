@@ -33,5 +33,6 @@ Traffic from the on-site networks communicates to the management subnet directly
 <ul>
 <li> On section 8.5 of the deployment guide, it reads: <i>...  Because the firewall’s public interface is a member of the Azure public load-balancer backend pool, Azure networking (Azure Load Balancer) performs translation (SNAT) for only TCP/UDP ports referenced in the active load balancing rules. To support a broad range of services, create a new public IP address for the public interface of each firewall used for outbound access. This method supports all TCP/UDP ports.
 </i><br/>However, with the Azure Load Balancer Standard SKU, configured with HA ports the ALB has a wildcard of ports and protocols as the load balancing rule so it would SNAT everything therefore the additional public IP would not be needed.  On top of that, ALB Standard has Outbound rules: https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-outbound-rules-overview
+<li>Before creating the first Palo Alto firewall in an Azure Subscription, the Palo Alto terms for the Azure Marketplace have to be accepted. This can be accomplished by running acceptterms.ps1
 </ul>
 
