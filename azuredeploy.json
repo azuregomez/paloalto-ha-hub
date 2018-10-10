@@ -169,13 +169,13 @@
       "fwpublicIPName": "[concat(variables('vmNamePrefix'), '-fwMgmtPublicIP-')]",
       "fwlbPublicIPName" : "paloAltoExtLBIP",
       "publicIPAddressType" : "Static",      
-      "untrustedLbName" : "AzureRefArch-Shared-Public",     
+      "untrustedLbName" : "Untrusted-LB",     
       "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('fwlbPublicIPName'))]",
       "untrustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('untrustedLbName'))]",
       "frontEndIPConfigID": "[concat(variables('untrustedLbID'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]",
       "untrustedlbPoolID": "[concat(variables('untrustedLbID'),'/backendAddressPools/Firewall-Layer')]",
       "untrustedlbProbeID": "[concat(variables('untrustedLbID'),'/probes/tcpProbe')]",
-      "trustedLbName" : "AzureRefArch-Shared-Internal",
+      "trustedLbName" : "Trusted-Backhaul-LB",
       "trustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('trustedLbName'))]",     
       "numberOfInstances": 2,
       "managementNicNamePrefix" : "eth0",
@@ -558,7 +558,7 @@
 						"name": "FrontendBackhaul",
 						"properties": {
 							"subnet": {
-                "id": "[variables('trustedSubnetRef')]"                
+                "id": "[variables('backhaulSubnetRef')]"                
               },
               "privateIPAllocationMethod": "Dynamic"
 						}

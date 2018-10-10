@@ -279,6 +279,9 @@
         "type": "Microsoft.Network/virtualNetworks/subnets",        
         "name": "[concat(parameters('vnetName'), '/', parameters('bastionSubnetName'))]",
         "location": "[parameters('location')]",
+        "dependsOn": [
+              "[concat('Microsoft.Network/networkSecurityGroups/', 'AllowRDP-Subnet')]"
+        ],
         "properties": {
           "addressPrefix": "[parameters('bastionSubnetPrefix')]",
           "networkSecurityGroup": {

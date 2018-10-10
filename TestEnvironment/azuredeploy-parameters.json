@@ -18,7 +18,7 @@
         "value": "Bastion-Subnet"
       },
       "bastionSubnetPrefix": {
-        "value": "10.10.4.0/24"
+        "value": "10.1.4.0/24"
       },
       "spokeVnetName": {
           "value": "SpokeVNet"
@@ -34,6 +34,28 @@
       },
       "spokeVmName":{
           "value": "webVm01"
-      }
+      },
+      "OnPremSettings":{
+        "value":{
+            "location":"South US",
+            "resourceGroup": "onprem-RG",
+            "vnet": [
+                {
+                    "name": "OnPremVNet",
+                    "addressPrefix": "10.0.0.0/16"
+                }
+            ],
+            "subnet":[
+                {
+                    "name": "PublicSubnet",
+                    "addressPrefix": "10.0.1.0/24"
+                },
+                {
+                    "name": "IntranetSubnet",
+                    "addressPrefix": "10.0.2.0/24"
+                }
+            ]
+        }
+     }            
     }
   }
