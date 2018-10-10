@@ -2,30 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "vnetName": {
-            "type": "string",
-            "metadata": {
-            "description": "Name for the existing VNet."
-            }
-        },
-        "bastionVmName": {
-            "type": "string",
-            "metadata": {
-            "description": "Name for the bastionVirtual Machine."
-            }
-        },
-        "bastionSubnetName": {
-            "type": "string",
-            "metadata": {
-            "description": "Name for the bastion subnet."
-            }
-        },
-        "bastionSubnetPrefix": {
-            "type": "string",
-            "metadata": {
-            "description": "Prefix for the bastion subnet."
-            }
-        },
         "adminUsername": {
             "type": "string",
             "metadata": {
@@ -37,21 +13,27 @@
             "metadata": {
             "description": "Password for the Virtual Machine."
             }
-        },     
-        "windowsOSVersion": {
+        },
+        "vnetName": {
             "type": "string",
-            "defaultValue": "2016-Datacenter",
-            "allowedValues": [
-            "2008-R2-SP1",
-            "2012-Datacenter",
-            "2012-R2-Datacenter",
-            "2016-Nano-Server",
-            "2016-Datacenter-with-Containers",
-            "2016-Datacenter"
-            ],
             "metadata": {
-            "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version."
+            "description": "Name for the existing VNet."
             }
+        },
+        "windowsOSVersion": {
+          "type": "string",
+          "defaultValue": "2016-Datacenter",
+          "allowedValues": [
+          "2008-R2-SP1",
+          "2012-Datacenter",
+          "2012-R2-Datacenter",
+          "2016-Nano-Server",
+          "2016-Datacenter-with-Containers",
+          "2016-Datacenter"
+          ],
+          "metadata": {
+          "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version."
+          }
         },
         "location": {
             "type": "string",
@@ -59,37 +41,7 @@
             "metadata": {
             "description": "Location for all resources."
             }
-        },
-        "spokeVnetName": {
-            "type": "string",
-            "metadata": {
-                "description": "Spoke VNet Name."
-            }
-        },
-        "spokeVNetPrefix":{
-            "type": "string",
-            "metadata": {
-                "description": "Spoke VNet Address Space"
-            }
-        },
-        "spokeSubnetName": {
-            "type": "string",
-            "metadata": {
-                "description": "Spoke Subnet Name"
-            }
-        },
-        "spokeSubnetPrefix":{
-            "type": "string",
-            "metadata": {
-                "description": "Spoke Subnet Address Space"
-            }
-        },
-        "spokeVmName":{
-            "type": "string",
-            "metadata": {
-                "description": "Spoke (Website) VNet Name"
-            }
-        },
+        },        
         "_artifactsLocation": {
             "type": "string",
             "metadata": {
@@ -115,8 +67,8 @@
             "metadata": {
               "description": "The Sku of the Gateway. This must be one of Basic, Standard or HighPerformance."
             }
-          },
-          "vpnType": {
+        },
+        "vpnType": {
             "type": "string",
             "metadata": {
               "description": "Route based (Dynamic Gateway) or Policy based (Static Gateway)"
@@ -126,24 +78,33 @@
               "RouteBased",
               "PolicyBased"
             ]
-          }
+        },
+        "BastionSettings":{"type":"object"},
+        "SpokeSettings":{"type":"object"},
+        "OnPremSettings":{"type":"object"}
     },
     "variables": {      
-      "nicName": "[concat(parameters('bastionVmName'), '-NIC')]",      
-      "spokeNicName": "[concat(parameters('spokeVmName'), '-NIC')]",      
-      "publicIPAddressName": "[concat(parameters('bastionVmName'), '-PIP')]",         
-      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('bastionSubnetName'))]",
-      "spokeSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('spokeVnetName'), parameters('spokeSubnetName'))]",
+      "nicName": "[concat(parameters('BastionSettings').vmName, '-NIC')]",      
+      "spokeNicName": "[concat(parameters('SpokeSettings').vmName, '-NIC')]",   
+      "onPremNicName": "[concat(parameters('OnPremSettings').subnet[0].vmName, '-NIC')]",
+      "onPremNicNameWeb": "[concat(parameters('OnPremSettings').subnet[1].vmName, '-NIC')]",
+      "publicIPAddressName": "[concat(parameters('BastionSettings').vmName, '-PIP')]",      
+      "onPremPIPName": "[concat(parameters('OnPremSettings').subnet[0].vmName, '-PIP')]",  
+      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('BastionSettings').subnet.name)]",
+      "spokeSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('SpokeSettings').vnet.name, parameters('SpokeSettings').subnet.name)]",
       "scriptFileName": "WebScript.ps1",
       "fileToBeCopied": "index.html",
       "scriptParameters": "[concat('-artifactsLocation ', parameters('_artifactsLocation'), '/', parameters('_artifactsDirectory'),  ' -fileToInstall ', variables('fileToBeCopied'))]",
-      "gatewaySubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'GatewaySubnet')]",    
+      "gatewaySubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'GatewaySubnet')]",  
+      "onPremGatewaySubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('OnPremSettings').vnet.name, 'GatewaySubnet')]",  
       "gatewayPublicIpName" : "[concat(parameters('vnetName'), '-Gwy-IP')]",
+      "onPremGatewayPublicIpName" : "[concat(parameters('OnPremSettings').vnet.name, '-Gwy-IP')]",
       "gatewayName": "[concat(parameters('vnetName'), '-Gwy')]",
-      "spokeVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('spokeVnetName'))]",      
+      "onPremGatewayName": "[concat(parameters('OnPremSettings').vnet.name, '-Gwy')]",
+      "spokeVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('SpokeSettings').vnet.name)]",      
       "hubPeeringName": "[concat(parameters('vnetName'), '/peering-to-spoke')]",     
       "hubVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",      
-      "spokePeeringName": "[concat(parameters('spokeVnetName'), '/peering-to-hub')]"
+      "spokePeeringName": "[concat(parameters('SpokeSettings').vnet.name, '/peering-to-hub')]"
     },
     "resources": [     
         {
@@ -186,7 +147,7 @@
               "vpnType": "[parameters('vpnType')]",
               "enableBgp": "false"
             }
-          },
+        },
         {
             "comments": "Bastion VNet Public IP",
             "apiVersion": "2016-03-30",
@@ -277,13 +238,13 @@
         "comments": "New Bastion Subnet",
         "apiVersion": "2018-08-01",
         "type": "Microsoft.Network/virtualNetworks/subnets",        
-        "name": "[concat(parameters('vnetName'), '/', parameters('bastionSubnetName'))]",
+        "name": "[concat(parameters('vnetName'), '/', parameters('BastionSettings').subnet.name)]",
         "location": "[parameters('location')]",
         "dependsOn": [
               "[concat('Microsoft.Network/networkSecurityGroups/', 'AllowRDP-Subnet')]"
         ],
         "properties": {
-          "addressPrefix": "[parameters('bastionSubnetPrefix')]",
+          "addressPrefix": "[parameters('BastionSettings').subnet.addressPrefix]",
           "networkSecurityGroup": {
             "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'AllowRDP-Subnet')]"
           }
@@ -293,7 +254,7 @@
         "comments": "Spoke VNet",
         "apiVersion": "2015-06-15",
         "type": "Microsoft.Network/virtualNetworks",
-        "name": "[parameters('spokeVnetName')]",
+        "name": "[parameters('SpokeSettings').vnet.name]",
         "location": "[parameters('location')]",
         "dependsOn": [
           "[concat('Microsoft.Network/networkSecurityGroups/', 'AllowWeb-Subnet')]",
@@ -302,14 +263,14 @@
         "properties": {
           "addressSpace": {
             "addressPrefixes": [
-              "[parameters('spokeVnetPrefix')]"
+              "[parameters('SpokeSettings').vnet.addressPrefix]"
             ]
           },
           "subnets": [
             {
-              "name": "[parameters('spokeSubnetName')]",
+              "name": "[parameters('SpokeSettings').subnet.name]",
               "properties": {
-                "addressPrefix": "[parameters('spokeSubnetPrefix')]",
+                "addressPrefix": "[parameters('SpokeSettings').subnet.addressPrefix]",
                 "networkSecurityGroup": {
                   "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'AllowWeb-Subnet')]"
                 }
@@ -325,7 +286,7 @@
                 "name": "[variables('spokePeeringName')]",
                 "location": "[parameters('location')]",  
                 "dependsOn": [
-                    "[concat('Microsoft.Network/virtualNetworks/', parameters('spokeVNetName'))]"            
+                    "[concat('Microsoft.Network/virtualNetworks/', parameters('SpokeSettings').vnet.name)]"            
                 ],             
                 "properties": {
                   "allowVirtualNetworkAccess": true,
@@ -347,7 +308,7 @@
         "location": "[parameters('location')]",
         "dependsOn": [
           "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
-          "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('vnetName'), parameters('bastionSubnetName'))]"
+          "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('vnetName'), parameters('BastionSettings').subnet.name)]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -370,7 +331,7 @@
         "comments": "Bastion VM",
         "apiVersion": "2017-03-30",
         "type": "Microsoft.Compute/virtualMachines",
-        "name": "[parameters('bastionVmName')]",
+        "name": "[parameters('BastionSettings').vmName]",
         "location": "[parameters('location')]",
         "dependsOn": [          
           "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
@@ -380,7 +341,7 @@
             "vmSize": "Standard_A2"
           },
           "osProfile": {
-            "computerName": "[parameters('bastionVmName')]",
+            "computerName": "[parameters('BastionSettings').vmName]",
             "adminUsername": "[parameters('adminUsername')]",
             "adminPassword": "[parameters('adminPassword')]"
           },
@@ -418,7 +379,7 @@
         "name": "[variables('spokeNicName')]",
         "location": "[parameters('location')]",
         "dependsOn": [          
-          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('spokeVnetName'))]"
+          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('SpokeSettings').vnet.name)]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -438,7 +399,7 @@
         "comments": "Spoke Web VM",
         "apiVersion": "2017-03-30",
         "type": "Microsoft.Compute/virtualMachines",
-        "name": "[parameters('spokeVmName')]",
+        "name": "[parameters('SpokeSettings').vmName]",
         "location": "[parameters('location')]",
         "dependsOn": [          
           "[resourceId('Microsoft.Network/networkInterfaces/', variables('spokeNicName'))]"
@@ -448,7 +409,7 @@
             "vmSize": "Standard_A2"
           },
           "osProfile": {
-            "computerName": "[parameters('spokeVmName')]",
+            "computerName": "[parameters('SpokeSettings').vmName]",
             "adminUsername": "[parameters('adminUsername')]",
             "adminPassword": "[parameters('adminPassword')]"
           },
@@ -485,7 +446,7 @@
                 "apiVersion": "2017-03-30",
                 "location": "[resourceGroup().location]",
                 "dependsOn": [
-                    "[parameters('spokeVmName')]"
+                    "[parameters('SpokeSettings').vmName]"
                 ],
                 "properties": {
                     "publisher": "Microsoft.Compute",
@@ -511,7 +472,7 @@
         "name": "[variables('hubPeeringName')]",
         "location": "[parameters('location')]",
         "dependsOn": [
-            "[concat('Microsoft.Network/virtualNetworks/', parameters('spokeVNetName'))]",
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('SpokeSettings').vnet.name)]",
             "[concat('Microsoft.Network/virtualNetworkGateways/', variables('gatewayName'))]"        
         ],
         "properties": {
@@ -523,6 +484,344 @@
             "id": "[variables('spokeVNetRef')]"
           }
         }
+      },
+      {
+        "comments": "***** ON PREM NSG for RDP",
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "OnPrem-AllowRDP-Subnet",
+        "location": "[parameters('OnPremSettings').location]",
+        "properties": {
+            "securityRules": [
+            {
+                "name": "AllowRDP-Inbound",
+                "properties": {
+                    "description": "Rule",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "3389",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            },          
+            {
+                "name": "Default-Deny",
+                "properties": {
+                    "description": "Default-Deny if we don't match Allow rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Deny",
+                    "priority": 200,
+                    "direction": "Inbound"
+                }
+            }]
+        }
+      },      
+      {
+        "comments": "On Prem NSG for Web",
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "OnPrem-AllowWeb-Subnet",
+        "location": "[parameters('OnPremSettings').location]",
+        "properties": {
+            "securityRules": [
+            {
+                "name": "AllowWeb-Inbound",
+                "properties": {
+                    "description": "Rule",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "80",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 100,
+                    "direction": "Inbound"
+                }
+            },          
+            {
+                "name": "Default-Deny",
+                "properties": {
+                    "description": "Default-Deny if we don't match Allow rule",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "*",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Deny",
+                    "priority": 200,
+                    "direction": "Inbound"
+                }
+            }]
+        }
+      },
+      {
+        "comments": "OnPrem VNet",
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "[parameters('OnPremSettings').vnet.name]",
+        "location": "[parameters('OnPremSettings').location]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/networkSecurityGroups/', 'OnPrem-AllowWeb-Subnet')]",
+          "[concat('Microsoft.Network/networkSecurityGroups/', 'OnPrem-AllowRDP-Inbound')]"
+        ],
+        "properties": {
+          "addressSpace": {
+            "addressPrefixes": [
+              "[parameters('OnPremSettings').vnet.addressPrefix]"
+            ]
+          },
+          "subnets": [
+            {
+              "name": "[parameters('OnPremSettings').subnet[0].name]",
+              "properties": {
+                "addressPrefix": "[parameters('OnPremSettings').subnet[0].addressPrefix]",
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'OnPrem-AllowRDP-Inbound')]"
+                }
+              }
+            },
+            {
+              "name": "[parameters('OnPremSettings').subnet[1].name]",
+              "properties": {
+                "addressPrefix": "[parameters('OnPremSettings').subnet[1].addressPrefix]",
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'OnPrem-AllowWeb-Subnet')]"
+                }
+              }
+            },
+            {
+              "name": "GatewaySubnet",
+              "properties": {
+                "addressPrefix": "[parameters('OnPremSettings').vnet.gatewaySubnetAddressPrefix]"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "comments": "Onprem Gwy PIP",
+        "apiVersion": "2018-07-01",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('onPremGatewayPublicIpName')]",
+        "location": "[parameters('OnPremSettings').location]",
+        "properties": {
+          "publicIPAllocationMethod": "Dynamic"
+        }
+      },
+      {
+        "comments": "OnPrem Gateway",
+        "apiVersion": "2018-07-01",
+        "type": "Microsoft.Network/virtualNetworkGateways",
+        "name": "[variables('onPremGatewayName')]",
+        "location": "[parameters('OnPremSettings').location]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/publicIPAddresses/', variables('onPremGatewayPublicIpName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "properties": {
+                "privateIPAllocationMethod": "Dynamic",
+                "subnet": {
+                  "id": "[variables('onPremGatewaySubnetRef')]"
+                },
+                "publicIPAddress": {
+                  "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('onPremGatewayPublicIpName'))]"
+                }
+              },
+              "name": "vnetGatewayConfig"
+            }
+          ],
+          "sku": {
+            "name": "[parameters('gatewaySku')]",
+            "tier": "[parameters('gatewaySku')]"
+          },
+          "gatewayType": "Vpn",
+          "vpnType": "[parameters('vpnType')]",
+          "enableBgp": "false"
+        }
+      },
+      {
+        "comments": "Public Bastion VM PIP",
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('onPremPIPName')]",
+        "location": "[parameters('OnPremSettings').location]",
+        "properties": {
+        "publicIPAllocationMethod": "Dynamic"          
+        }
+      },
+      {
+        "comments": "NIC for onprem bastionVM",
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[variables('onPremNicName')]",
+        "location": "[parameters('OnPremSettings').location]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/publicIPAddresses/', variables('onPremPIPName'))]",
+          "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('OnPremSettings').vnet.name, parameters('OnPremSettings').subnet[0].name)]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "privateIPAllocationMethod": "Dynamic",
+                "publicIPAddress": {
+                  "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('onPremPIPName'))]"
+                },
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('OnPremSettings').vnet.name, parameters('OnPremSettings').subnet[0].name)]"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "comments": "OnPrem Bastion VM",
+        "apiVersion": "2017-03-30",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "[parameters('OnPremSettings').subnet[0].vmName]",
+        "location": "[parameters('OnPremSettings').location]",
+        "dependsOn": [          
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('onPremNicName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "Standard_A2"
+          },
+          "osProfile": {
+            "computerName": "[parameters('OnPremSettings').subnet[0].vmName]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]"
+          },
+          "storageProfile": {
+            "imageReference": {
+              "publisher": "MicrosoftWindowsServer",
+              "offer": "WindowsServer",
+              "sku": "[parameters('windowsOSVersion')]",
+              "version": "latest"
+            },
+            "osDisk": {
+              "createOption": "FromImage"
+            },
+            "dataDisks": [
+              {
+                "diskSizeGB": 1023,
+                "lun": 0,
+                "createOption": "Empty"
+              }
+            ]
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('onPremNicName'))]"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "comments": "NIC for OnPrem WebVM",
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[variables('onPremNicNameWeb')]",
+        "location": "[parameters('OnPremSettings').location]",
+        "dependsOn": [                    
+          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('OnPremSettings').vnet.name)]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "privateIPAllocationMethod": "Dynamic",                
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('OnPremSettings').vnet.name, parameters('OnPremSettings').subnet[1].name)]"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "comments": "OnPrem Web VM",
+        "apiVersion": "2017-03-30",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "[parameters('OnPremSettings').vmName]",
+        "location": "[parameters('OnPremSettings').location]",
+        "dependsOn": [          
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('onPremNicNameWeb'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "Standard_A2"
+          },
+          "osProfile": {
+            "computerName": "[parameters('OnPremSettings').subnet[1].vmName]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]"
+          },
+          "storageProfile": {
+            "imageReference": {
+              "publisher": "MicrosoftWindowsServer",
+              "offer": "WindowsServer",
+              "sku": "[parameters('windowsOSVersion')]",
+              "version": "latest"
+            },
+            "osDisk": {
+              "createOption": "FromImage"
+            },
+            "dataDisks": [
+              {
+                "diskSizeGB": 1023,
+                "lun": 0,
+                "createOption": "Empty"
+              }
+            ]
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('onPremNicNameWeb'))]"
+              }
+            ]
+          }
+        },
+        "resources": [
+            {
+                "type": "extensions",
+                "name": "CustomScriptExtension",
+                "apiVersion": "2017-03-30",
+                "location": "[parameters('OnPremSettings').location]",
+                "dependsOn": [
+                    "[parameters('OnPremSettings').subnet[1].vmName]"
+                ],
+                "properties": {
+                    "publisher": "Microsoft.Compute",
+                    "type": "CustomScriptExtension",
+                    "typeHandlerVersion": "1.9",
+                    "autoUpgradeMinorVersion": true,
+                    "settings": {
+                        "fileUris": [
+                            "[concat(parameters('_artifactsLocation'), '/', parameters('_artifactsDirectory'), '/', variables('ScriptFileName'))]"                                
+                        ],
+                        "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', './' , parameters('_artifactsDirectory'), '/',  variables('scriptFileName'), ' ', variables('scriptParameters'))]"                            
+                    },
+                    "provisioningState": "Succeeded"
+                    
+                }
+            }
+        ]
       }
     ],
     "outputs": {     

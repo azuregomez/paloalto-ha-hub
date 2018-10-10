@@ -2,60 +2,66 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "bastionVmName": {
-          "value": "bastionVM"
-      },
-      "adminUsername": {
-        "value": "gomez5"
-      },
-      "adminPassword": {
-        "value": "abr4c4d4br4!"
-      },
-      "vnetName": {
-        "value": "HubVNet"
-      },
-      "bastionSubnetName": {
-        "value": "Bastion-Subnet"
-      },
-      "bastionSubnetPrefix": {
-        "value": "10.1.4.0/24"
-      },
-      "spokeVnetName": {
-          "value": "SpokeVNet"
-      },
-      "spokeVNetPrefix":{
-          "value": "10.11.0.0/16"
-      },
-      "spokeSubnetName": {
-        "value": "SpokeVNet"
-      },
-      "spokeSubnetPrefix":{
-            "value": "10.11.1.0/24"
-      },
-      "spokeVmName":{
-          "value": "webVm01"
-      },
-      "OnPremSettings":{
-        "value":{
-            "location":"South US",
-            "resourceGroup": "onprem-RG",
-            "vnet": [
-                {
-                    "name": "OnPremVNet",
-                    "addressPrefix": "10.0.0.0/16"
-                }
-            ],
-            "subnet":[
-                {
-                    "name": "PublicSubnet",
-                    "addressPrefix": "10.0.1.0/24"
-                },
-                {
-                    "name": "IntranetSubnet",
-                    "addressPrefix": "10.0.2.0/24"
-                }
-            ]
-        }
-     }            
+        "adminUsername": {
+            "value": "gomez5"
+        },
+        "adminPassword": {
+            "value": "abr4c4d4br4!"
+        },
+        "vnetName": {
+            "value": "HubVNet"
+        },
+        "BastionSettings":{
+            "value": {                 
+                  "subnet":[
+                      {
+                          "name": "Bastion-Subnet",
+                          "addressPrefix": "10.1.4.0/24"
+                      }
+                  ],
+                  "vmName":"BastionVM"
+          }
+        },  
+        "SpokeSettings":{
+            "value": {
+                    "vnet": [
+                        {
+                            "name": "SpokeVNet",
+                            "addressPrefix": "10.11.0.0/16"
+                        }
+                    ],
+                    "subnet":[
+                        {
+                            "name": "WebSubnet",
+                            "addressPrefix": "10.11.1.0/24"
+                        }
+                    ],
+                    "vmName":"SpokeWebVm01"
+            }
+        },      
+        "OnPremSettings":{
+            "value":{
+                "location":"South US",                
+                "vnet": [
+                    {
+                        "name": "OnPremVNet",
+                        "addressPrefix": "10.0.0.0/16",
+                        "gatewaySubnetAddressPrefix": "10.0.10.0/24"
+                    }
+                ],
+                "subnet":[
+                    {
+                        "name": "PublicSubnet",
+                        "addressPrefix": "10.0.1.0/24",
+                        "vmName": "DropzoneVM"
+                    },
+                    {
+                        "name": "WebSubnet",
+                        "addressPrefix": "10.0.2.0/24",
+                        "vmName": "OnPremWebVM"
+                    }
+                ]
+            }
+        }            
     }
   }
