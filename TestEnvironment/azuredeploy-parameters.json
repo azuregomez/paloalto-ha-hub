@@ -13,42 +13,41 @@
         },
         "BastionSettings":{
             "value": {                 
-                  "subnet":[
+                  "subnet":
                       {
                           "name": "Bastion-Subnet",
                           "addressPrefix": "10.1.4.0/24"
-                      }
-                  ],
+                      },
                   "vmName":"BastionVM"
           }
         },  
         "SpokeSettings":{
             "value": {
-                    "vnet": [
+                    "vnet": 
                         {
                             "name": "SpokeVNet",
                             "addressPrefix": "10.11.0.0/16"
                         }
-                    ],
-                    "subnet":[
+                    ,
+                    "subnet":
                         {
                             "name": "WebSubnet",
                             "addressPrefix": "10.11.1.0/24"
                         }
-                    ],
+                    ,
                     "vmName":"SpokeWebVm01"
             }
         },      
         "OnPremSettings":{
             "value":{
-                "location":"South US",                
-                "vnet": [
+                "location":"South Central US",                
+                "vnet": 
                     {
                         "name": "OnPremVNet",
                         "addressPrefix": "10.0.0.0/16",
                         "gatewaySubnetAddressPrefix": "10.0.10.0/24"
                     }
-                ],
+                ,
                 "subnet":[
                     {
                         "name": "PublicSubnet",

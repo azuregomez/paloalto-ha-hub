@@ -569,7 +569,7 @@
         "location": "[parameters('OnPremSettings').location]",
         "dependsOn": [
           "[concat('Microsoft.Network/networkSecurityGroups/', 'OnPrem-AllowWeb-Subnet')]",
-          "[concat('Microsoft.Network/networkSecurityGroups/', 'OnPrem-AllowRDP-Inbound')]"
+          "[concat('Microsoft.Network/networkSecurityGroups/', 'OnPrem-AllowRDP-Subnet')]"
         ],
         "properties": {
           "addressSpace": {
@@ -583,7 +583,7 @@
               "properties": {
                 "addressPrefix": "[parameters('OnPremSettings').subnet[0].addressPrefix]",
                 "networkSecurityGroup": {
-                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'OnPrem-AllowRDP-Inbound')]"
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'OnPrem-AllowRDP-Subnet')]"
                 }
               }
             },
@@ -622,7 +622,8 @@
         "name": "[variables('onPremGatewayName')]",
         "location": "[parameters('OnPremSettings').location]",
         "dependsOn": [
-          "[concat('Microsoft.Network/publicIPAddresses/', variables('onPremGatewayPublicIpName'))]"
+          "[concat('Microsoft.Network/publicIPAddresses/', variables('onPremGatewayPublicIpName'))]",
+          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('OnPremSettings').vnet.name)]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -666,7 +667,7 @@
         "location": "[parameters('OnPremSettings').location]",
         "dependsOn": [
           "[resourceId('Microsoft.Network/publicIPAddresses/', variables('onPremPIPName'))]",
-          "[resourceId('Microsoft.Network/virtualNetworks/subnets/', parameters('OnPremSettings').vnet.name, parameters('OnPremSettings').subnet[0].name)]"
+          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('OnPremSettings').vnet.name)]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -757,7 +758,7 @@
         "comments": "OnPrem Web VM",
         "apiVersion": "2017-03-30",
         "type": "Microsoft.Compute/virtualMachines",
-        "name": "[parameters('OnPremSettings').vmName]",
+        "name": "[parameters('OnPremSettings').subnet[1].vmName]",
         "location": "[parameters('OnPremSettings').location]",
         "dependsOn": [          
           "[resourceId('Microsoft.Network/networkInterfaces/', variables('onPremNicNameWeb'))]"
