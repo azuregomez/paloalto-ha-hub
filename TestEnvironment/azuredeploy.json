@@ -20,6 +20,12 @@
             "description": "Name for the existing VNet."
             }
         },
+        "vnetAddressPrefix":{
+          "type": "string",
+            "metadata": {
+            "description": "Existing VNet address prefix"
+            }
+        },
         "windowsOSVersion": {
           "type": "string",
           "defaultValue": "2016-Datacenter",
@@ -104,10 +110,16 @@
       "spokeVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('SpokeSettings').vnet.name)]",      
       "hubPeeringName": "[concat(parameters('vnetName'), '/peering-to-spoke')]",     
       "hubVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",      
-      "spokePeeringName": "[concat(parameters('SpokeSettings').vnet.name, '/peering-to-hub')]"
+      "spokePeeringName": "[concat(parameters('SpokeSettings').vnet.name, '/peering-to-hub')]",
+      "localGatewayName": "[concat(parameters('vnetName'), '-LocalGateway')]",
+      "onpremLocalGatewayName": "[concat(parameters('OnPremSettings').vnet.name, '-LocalGateway')]",
+      "hubGwyCnnName": "OnPrem-Connection",
+      "onpremGwyCnnName": "AzureHub-Connection"
+
     },
     "resources": [     
         {
+            "comments": "Hub Gateway PIP",
             "apiVersion": "2018-07-01",
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[variables('gatewayPublicIpName')]",
@@ -115,6 +127,34 @@
             "properties": {
               "publicIPAllocationMethod": "Dynamic"
             }
+        },
+        {
+          "comments": "Onprem Gateway PIP",
+          "apiVersion": "2018-07-01",
+          "type": "Microsoft.Network/publicIPAddresses",
+          "name": "[variables('onPremGatewayPublicIpName')]",
+          "location": "[parameters('OnPremSettings').location]",
+          "properties": {
+            "publicIPAllocationMethod": "Dynamic"
+          }
+        },
+        {
+          "comments": "Hub Local Gateway",
+          "apiVersion": "2018-07-01",
+          "type": "Microsoft.Network/localNetworkGateways",
+          "name": "[variables('localGatewayName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Network/publicIPAddresses/', variables('onPremGatewayPublicIpName'))]"
+          ],
+          "properties": {
+            "localNetworkAddressSpace": {
+              "addressPrefixes": [
+                "[parameters('OnPremSettings').vnet.addressPrefix]"
+              ]
+            },
+            "gatewayIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('onPremGatewayPublicIpName'))).IpAddress]"
+          }
         },
         {
             "apiVersion": "2018-07-01",
@@ -147,6 +187,27 @@
               "vpnType": "[parameters('vpnType')]",
               "enableBgp": "false"
             }
+        },
+        {
+          "apiVersion": "2018-07-01",
+          "name": "[variables('hubGwyCnnName')]",
+          "type": "Microsoft.Network/connections",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Network/virtualNetworkGateways/', variables('gatewayName'))]",
+            "[concat('Microsoft.Network/localNetworkGateways/', variables('localGatewayName'))]"
+          ],
+          "properties": {
+            "virtualNetworkGateway1": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', variables('gatewayName'))]"
+            },
+            "localNetworkGateway2": {
+              "id": "[resourceId('Microsoft.Network/localNetworkGateways', variables('localGatewayName'))]"
+            },
+            "connectionType": "IPsec",
+            "routingWeight": 10,
+            "sharedKey": "[parameters('adminPassword')]"
+          }
         },
         {
             "comments": "Bastion VNet Public IP",
@@ -484,9 +545,9 @@
             "id": "[variables('spokeVNetRef')]"
           }
         }
-      },
+      },     
       {
-        "comments": "***** ON PREM NSG for RDP",
+        "comments": "***** ON PREM NSG for RDP ******************************************************************",
         "apiVersion": "2015-06-15",
         "type": "Microsoft.Network/networkSecurityGroups",
         "name": "OnPrem-AllowRDP-Subnet",
@@ -604,15 +665,24 @@
             }
           ]
         }
-      },
+      },     
       {
-        "comments": "Onprem Gwy PIP",
+        "comments": "OnPrem Local Gateway",
         "apiVersion": "2018-07-01",
-        "type": "Microsoft.Network/publicIPAddresses",
-        "name": "[variables('onPremGatewayPublicIpName')]",
-        "location": "[parameters('OnPremSettings').location]",
+        "type": "Microsoft.Network/localNetworkGateways",
+        "name": "[variables('onpremLocalGatewayName')]",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/publicIPAddresses/', variables('gatewayPublicIpName'))]"
+        ],
         "properties": {
-          "publicIPAllocationMethod": "Dynamic"
+          "localNetworkAddressSpace": {
+            "addressPrefixes": [
+              "[parameters('vnetAddressPrefix')]",
+              "[parameters('SpokeSettings').vnet.addressPrefix]"
+            ]
+          },
+          "gatewayIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('gatewayPublicIpName'))).IpAddress]"
         }
       },
       {
@@ -647,6 +717,27 @@
           "gatewayType": "Vpn",
           "vpnType": "[parameters('vpnType')]",
           "enableBgp": "false"
+        }
+      },
+      {
+        "apiVersion": "2018-07-01",
+        "name": "[variables('onpremGwyCnnName')]",
+        "type": "Microsoft.Network/connections",
+        "location": "[parameters('OnPremSettings').location]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/virtualNetworkGateways/', variables('onpremGatewayName'))]",
+          "[concat('Microsoft.Network/localNetworkGateways/', variables('onpremLocalGatewayName'))]"
+        ],
+        "properties": {
+          "virtualNetworkGateway1": {
+            "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', variables('onpremGatewayName'))]"
+          },
+          "localNetworkGateway2": {
+            "id": "[resourceId('Microsoft.Network/localNetworkGateways', variables('onpremLocalGatewayName'))]"
+          },
+          "connectionType": "IPsec",
+          "routingWeight": 10,
+          "sharedKey": "[parameters('adminPassword')]"
         }
       },
       {

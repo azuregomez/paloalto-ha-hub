@@ -11,6 +11,9 @@
         "vnetName": {
             "value": "HubVNet"
         },
+        "vnetAddressPrefix": {
+            "value": "10.1.0.0/16"
+        },
         "BastionSettings":{
             "value": {                 
                   "subnet":
