@@ -1,3 +1,5 @@
+[![Deploy to Azure](https://azuredeploy.net/deploybutton.svg)](https://azuredeploy.net/)
+
 This deployment features:
 
 <ul>
