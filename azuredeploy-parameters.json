@@ -1,10 +1,7 @@
 {
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
-  "parameters": {
-    "location": {
-      "value": "North Central US"
-    },
+  "parameters": {   
     "vnetName": {
       "value": "HubVNet"
     },
@@ -57,7 +54,7 @@
       "value": "p@ssw0rd123A"
     },
     "dnsNameForPublicIP":{
-      "value": "egomez-pan-fw"
+      "value": "egomez99-pan-fw"
     }
   }
 }
