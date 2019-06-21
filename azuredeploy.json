@@ -103,11 +103,11 @@
     },  
     "asFaultDomainCount": {
 	    "type": "int",
-	    "defaultValue: 3
+	    "defaultValue": 3
     },
     "asUpdateDomainCount": {
-	  "type": "int",
-	  "defaultValue: 20
+      "type": "int",
+      "defaultValue": 20
     },
     "vmSize": {
 			"type": "string",
