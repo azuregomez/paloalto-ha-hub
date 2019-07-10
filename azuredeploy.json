@@ -167,17 +167,17 @@
   }, 
   "variables":
     {      
-      "vmNamePrefix" : "PaloAltoVM",
+      "vmNamePrefix" : "paloaltovm",
       "fwpublicIPName": "[concat(variables('vmNamePrefix'), '-fwMgmtPublicIP-')]",
       "fwlbPublicIPName" : "paloAltoExtLBIP",
       "publicIPAddressType" : "Static",      
-      "untrustedLbName" : "Untrusted-LB",     
+      "untrustedLbName" : "untrusted-lb",     
       "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('fwlbPublicIPName'))]",
       "untrustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('untrustedLbName'))]",
       "frontEndIPConfigID": "[concat(variables('untrustedLbID'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]",
       "untrustedlbPoolID": "[concat(variables('untrustedLbID'),'/backendAddressPools/Firewall-Layer')]",
       "untrustedlbProbeID": "[concat(variables('untrustedLbID'),'/probes/tcpProbe')]",
-      "trustedLbName" : "Trusted-Backhaul-LB",
+      "trustedLbName" : "trusted-backhaul-lb",
       "trustedLbID": "[resourceId('Microsoft.Network/loadBalancers',variables('trustedLbName'))]",     
       "numberOfInstances": 2,
       "managementNicNamePrefix" : "eth0",
@@ -477,7 +477,7 @@
               "protocol": "Tcp",
               "frontendPort": 80,
               "backendPort": 80,
-              "enableFloatingIP": true,
+              "enableFloatingIP": false,
               "idleTimeoutInMinutes": 5,
               "probe": {
                 "id": "[variables('untrustedlbProbeID')]"
@@ -591,7 +591,7 @@
 							"protocol": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 'All', 'Tcp')]",
 							"frontendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
 							"backendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
-							"enableFloatingIP": true,
+							"enableFloatingIP": false,
 							"idleTimeoutInMinutes": 4,
 							"loadDistribution": "SourceIPProtocol"
 						}						
@@ -611,7 +611,7 @@
 							"protocol": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 'All', 'Tcp')]",
 							"frontendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
 							"backendPort": "[if(equals(parameters('trustedLoadBalancerSku'), 'Standard'), 0, 80)]",
-							"enableFloatingIP": true,
+							"enableFloatingIP": false,
 							"idleTimeoutInMinutes": 4,
 							"loadDistribution": "SourceIPProtocol"
 						}						

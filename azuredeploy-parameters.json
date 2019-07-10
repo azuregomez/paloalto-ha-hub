@@ -3,31 +3,31 @@
   "contentVersion": "1.0.0.0",
   "parameters": {   
     "vnetName": {
-      "value": "HubVNet"
+      "value": "hubvnet"
     },
     "vnetAddressPrefix": {
       "value": "10.1.0.0/16"
     },
     "managementSubnetName": {
-      "value": "PaloAlto-Management"
+      "value": "paloalto-management"
     },
     "managementSubnetPrefix": {
       "value": "10.1.0.0/24"
     },
     "untrustedSubnetName": {
-      "value": "PaloAlto-Untrusted"
+      "value": "paloalto-untrusted"
     },
     "untrustedSubnetPrefix": {
       "value": "10.1.1.0/24"
     },
     "trustedSubnetName": {
-      "value": "PaloAlto-Trusted"
+      "value": "paloalto-trusted"
     },
     "trustedSubnetPrefix": {
       "value": "10.1.2.0/24"
     },   
     "backhaulSubnetName": {
-      "value": "PaloAlto-Backhaul"
+      "value": "paloalto-backhaul"
     },
     "backhaulSubnetPrefix": {
       "value": "10.1.3.0/24"

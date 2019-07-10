@@ -87,17 +87,20 @@
         },
         "BastionSettings":{"type":"object"},
         "SpokeSettings":{"type":"object"},
+        "Spoke2Settings":{"type":"object"},
         "OnPremSettings":{"type":"object"}
     },
     "variables": {      
-      "nicName": "[concat(parameters('BastionSettings').vmName, '-NIC')]",      
-      "spokeNicName": "[concat(parameters('SpokeSettings').vmName, '-NIC')]",   
-      "onPremNicName": "[concat(parameters('OnPremSettings').subnet[0].vmName, '-NIC')]",
-      "onPremNicNameWeb": "[concat(parameters('OnPremSettings').subnet[1].vmName, '-NIC')]",
-      "publicIPAddressName": "[concat(parameters('BastionSettings').vmName, '-PIP')]",      
-      "onPremPIPName": "[concat(parameters('OnPremSettings').subnet[0].vmName, '-PIP')]",  
+      "nicName": "[concat(parameters('BastionSettings').vmName, '-nic')]",      
+      "spokeNicName": "[concat(parameters('SpokeSettings').vmName, '-nic')]",   
+      "spoke2NicName" : "[concat(parameters('Spoke2Settings').vmName, '-nic')]",   
+      "onPremNicName": "[concat(parameters('OnPremSettings').subnet[0].vmName, '-nic')]",
+      "onPremNicNameWeb": "[concat(parameters('OnPremSettings').subnet[1].vmName, '-nic')]",
+      "publicIPAddressName": "[concat(parameters('BastionSettings').vmName, '-pip')]",      
+      "onPremPIPName": "[concat(parameters('OnPremSettings').subnet[0].vmName, '-pip')]",  
       "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('BastionSettings').subnet.name)]",
       "spokeSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('SpokeSettings').vnet.name, parameters('SpokeSettings').subnet.name)]",
+      "spoke2SubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('Spoke2Settings').vnet.name, parameters('Spoke2Settings').subnet.name)]",
       "scriptFileName": "WebScript.ps1",
       "fileToBeCopied": "index.html",
       "scriptParameters": "[concat('-artifactsLocation ', parameters('_artifactsLocation'), '/', parameters('_artifactsDirectory'),  ' -fileToInstall ', variables('fileToBeCopied'))]",
@@ -107,10 +110,12 @@
       "onPremGatewayPublicIpName" : "[concat(parameters('OnPremSettings').vnet.name, '-Gwy-IP')]",
       "gatewayName": "[concat(parameters('vnetName'), '-Gwy')]",
       "onPremGatewayName": "[concat(parameters('OnPremSettings').vnet.name, '-Gwy')]",
-      "spokeVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('SpokeSettings').vnet.name)]",      
+      "spokeVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('SpokeSettings').vnet.name)]",  
+      "spoke2VNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke2Settings').vnet.name)]",  
       "hubPeeringName": "[concat(parameters('vnetName'), '/peering-to-spoke')]",     
       "hubVNetRef": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",      
       "spokePeeringName": "[concat(parameters('SpokeSettings').vnet.name, '/peering-to-hub')]",
+      "spoke2PeeringName":"[concat(parameters('Spoke2Settings').vnet.name, '/peering-to-hub')]",
       "localGatewayName": "[concat(parameters('vnetName'), '-LocalGateway')]",
       "onpremLocalGatewayName": "[concat(parameters('OnPremSettings').vnet.name, '-LocalGateway')]",
       "hubGwyCnnName": "OnPrem-Connection",
@@ -361,6 +366,56 @@
         ]
       },  
       {
+        "comments": "Spoke2 VNet",
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "[parameters('Spoke2Settings').vnet.name]",
+        "location": "[parameters('location')]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/networkSecurityGroups/', 'AllowRDP-Subnet')]",
+          "[concat('Microsoft.Network/virtualNetworkGateways/', variables('gatewayName'))]"
+        ],
+        "properties": {
+          "addressSpace": {
+            "addressPrefixes": [
+              "[parameters('Spoke2Settings').vnet.addressPrefix]"
+            ]
+          },
+          "subnets": [
+            {
+              "name": "[parameters('Spoke2Settings').subnet.name]",
+              "properties": {
+                "addressPrefix": "[parameters('Spoke2Settings').subnet.addressPrefix]",
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'AllowRDP-Subnet')]"
+                }
+              }
+            }
+          ]
+        },
+        "resources" :[
+            {
+                "comments": "Spoke2 to Hub Peering",
+                "apiVersion": "2016-06-01",
+                "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                "name": "[variables('spoke2PeeringName')]",
+                "location": "[parameters('location')]",  
+                "dependsOn": [
+                    "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').vnet.name)]"            
+                ],             
+                "properties": {
+                  "allowVirtualNetworkAccess": true,
+                  "allowForwardedTraffic": true,
+                  "allowGatewayTransit": false,
+                  "useRemoteGateways": true,
+                  "remoteVirtualNetwork": {
+                    "id": "[variables('hubVNetRef')]"
+                  }
+                }
+              }
+        ]
+      }, 
+      {
         "comments": "NIC for bastionVM",
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/networkInterfaces",
@@ -433,7 +488,7 @@
         }
       },
       {
-        "comments": "NIC for spokeVM",
+        "comments": "NIC for spoke Web VM",
         "apiVersion": "2016-03-30",
         "type": "Microsoft.Network/networkInterfaces",
         "name": "[variables('spokeNicName')]",
@@ -449,6 +504,29 @@
                 "privateIPAllocationMethod": "Dynamic",                
                 "subnet": {
                   "id": "[variables('spokeSubnetRef')]"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "comments": "NIC for spoke RDP VM",
+        "apiVersion": "2016-03-30",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[variables('spoke2NicName')]",
+        "location": "[parameters('location')]",
+        "dependsOn": [          
+          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').vnet.name)]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "privateIPAllocationMethod": "Dynamic",                
+                "subnet": {
+                  "id": "[variables('spoke2SubnetRef')]"
                 }
               }
             }
@@ -526,6 +604,51 @@
         ]
       },
       {
+        "comments": "Spoke RDP VM",
+        "apiVersion": "2017-03-30",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "[parameters('Spoke2Settings').vmName]",
+        "location": "[parameters('location')]",
+        "dependsOn": [          
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('spoke2NicName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "Standard_A2"
+          },
+          "osProfile": {
+            "computerName": "[parameters('Spoke2Settings').vmName]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]"
+          },
+          "storageProfile": {
+            "imageReference": {
+              "publisher": "MicrosoftWindowsServer",
+              "offer": "WindowsServer",
+              "sku": "[parameters('windowsOSVersion')]",
+              "version": "latest"
+            },
+            "osDisk": {
+              "createOption": "FromImage"
+            },
+            "dataDisks": [
+              {
+                "diskSizeGB": 1023,
+                "lun": 0,
+                "createOption": "Empty"
+              }
+            ]
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('spoke2NicName'))]"
+              }
+            ]
+          }
+        }
+      },
+      {
         "comments": "Hub to Spoke Peering",
         "apiVersion": "2016-06-01",
         "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
@@ -542,6 +665,26 @@
           "useRemoteGateways": false,
           "remoteVirtualNetwork": {
             "id": "[variables('spokeVNetRef')]"
+          }
+        }
+      }, 
+      {
+        "comments": "Hub to Spoke2 Peering",
+        "apiVersion": "2016-06-01",
+        "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+        "name": "[concat(variables('hubPeeringName'),'2')]",
+        "location": "[parameters('location')]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').vnet.name)]",
+            "[concat('Microsoft.Network/virtualNetworkGateways/', variables('gatewayName'))]"        
+        ],
+        "properties": {
+          "allowVirtualNetworkAccess": true,
+          "allowForwardedTraffic": true,
+          "allowGatewayTransit": true,
+          "useRemoteGateways": false,
+          "remoteVirtualNetwork": {
+            "id": "[variables('spoke2VNetRef')]"
           }
         }
       },     

@@ -9,7 +9,7 @@
             "value": "abr4c4d4br4!"
         },
         "vnetName": {
-            "value": "HubVNet"
+            "value": "hubvnet"
         },
         "vnetAddressPrefix": {
             "value": "10.1.0.0/16"
@@ -18,27 +18,44 @@
             "value": {                 
                   "subnet":
                       {
-                          "name": "Bastion-Subnet",
+                          "name": "bastion-subnet",
                           "addressPrefix": "10.1.4.0/24"
                       },
-                  "vmName":"BastionVM"
+                  "vmName":"bastionvm"
           }
         },  
         "SpokeSettings":{
             "value": {
                     "vnet": 
                         {
-                            "name": "SpokeVNet",
+                            "name": "spokevnet",
                             "addressPrefix": "10.11.0.0/16"
                         }
                     ,
                     "subnet":
                         {
-                            "name": "WebSubnet",
+                            "name": "websubnet",
                             "addressPrefix": "10.11.1.0/24"
                         }
                     ,
-                    "vmName":"SpokeWebVm01"
+                    "vmName":"spokewebvm01"
+            }
+        },  
+        "Spoke2Settings":{
+            "value": {
+                    "vnet": 
+                        {
+                            "name": "spoke2vnet",
+                            "addressPrefix": "10.12.0.0/16"
+                        }
+                    ,
+                    "subnet":
+                        {
+                            "name": "rdpsubnet",
+                            "addressPrefix": "10.12.1.0/24"
+                        }
+                    ,
+                    "vmName":"spokerdpvm01"
             }
         },      
         "OnPremSettings":{
@@ -46,21 +63,21 @@
                 "location":"South Central US",                
                 "vnet": 
                     {
-                        "name": "OnPremVNet",
+                        "name": "onpremvnet",
                         "addressPrefix": "10.0.0.0/16",
                         "gatewaySubnetAddressPrefix": "10.0.10.0/24"
                     }
                 ,
                 "subnet":[
                     {
-                        "name": "PublicSubnet",
+                        "name": "publicsubnet",
                         "addressPrefix": "10.0.1.0/24",
-                        "vmName": "DropzoneVM"
+                        "vmName": "jumpboxvm"
                     },
                     {
                         "name": "WebSubnet",
                         "addressPrefix": "10.0.2.0/24",
-                        "vmName": "OnPremWebVM"
+                        "vmName": "onpremwebvm"
                     }
                 ]
             }
