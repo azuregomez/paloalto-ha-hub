@@ -139,7 +139,7 @@
         },
         {
           "comments": "Hub Local Gateway",
-          "apiVersion": "2018-07-01",
+          "apiVersion": "2019-04-01",
           "type": "Microsoft.Network/localNetworkGateways",
           "name": "[variables('localGatewayName')]",
           "location": "[resourceGroup().location]",
@@ -152,7 +152,7 @@
                 "[parameters('OnPremSettings').vnet.addressPrefix]"
               ]
             },
-            "gatewayIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('onPremGatewayPublicIpName'))).IpAddress]"
+            "gatewayIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('onPremGatewayPublicIpName'))).ipAddress]"
           }
         },
         {
@@ -681,7 +681,7 @@
               "[parameters('SpokeSettings').vnet.addressPrefix]"
             ]
           },
-          "gatewayIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('gatewayPublicIpName'))).IpAddress]"
+          "gatewayIpAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('gatewayPublicIpName'))).ipAddress]"
         }
       },
       {
@@ -918,7 +918,7 @@
     "outputs": {     
       "bastionvmip": {
         "type": "string",
-        "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))).IpAddress]"        
+        "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))).ipAddress]"        
       }
     }
   }
