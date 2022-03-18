@@ -9,7 +9,8 @@ This deployment features:
 <li>Managed disks for the VMs
 </ul>
 
-This template follows the Shared Model.  The deployment guide published by Palo Alto is also included. 
+This template follows the Shared Model.  The deployment guide published by Palo Alto is here:
+https://www.paloaltonetworks.com/apps/pan/public/downloadResource?pagePath=/content/pan/en_US/resources/guides/azure-transit-vnet-deployment-guide-common-firewall-option
 
 <img src="https://storagegomez.blob.core.windows.net/public/images/pan-shared.jpg?sv=2020-04-08&st=2022-03-18T22%3A11%3A09Z&se=2023-12-31T23%3A11%3A00Z&sr=b&sp=r&sig=R%2Fe%2FpHFVQy4OnPtHWh4H4SHZ2WfmZsFcg%2Bvbp5alBg0%3D"/>
 
