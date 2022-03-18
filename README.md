@@ -11,7 +11,7 @@ This deployment features:
 
 This template follows the Shared Model.  The deployment guide published by Palo Alto is also included. 
 
-<img src="https://storagegomez.blob.core.windows.net/public/images/pan-shared.jpg"/>
+<img src="https://storagegomez.blob.core.windows.net/public/images/pan-shared.jpg?sv=2020-04-08&st=2022-03-18T22%3A11%3A09Z&se=2023-12-31T23%3A11%3A00Z&sr=b&sp=r&sig=R%2Fe%2FpHFVQy4OnPtHWh4H4SHZ2WfmZsFcg%2Bvbp5alBg0%3D"/>
 
 <b>Inbound Traffic</b>
 For inbound traffic, a public load-balancer distributes traffic to the firewalls. To simplify firewall configuration, the frontend public IP address is associated with a DNS name and floating IP is enabled on the load-balancer rules. The public load-balancer’s health probes monitor firewall availability through the HTTPS service activated in the interface management profile. Connectivity to the HTTPS service is limited to traffic sourced from the health probe IP address.
